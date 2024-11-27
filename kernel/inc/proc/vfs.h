@@ -31,12 +31,12 @@ struct vfsops {
 };
 
 struct vfs {
-    struct vfs* vfs_next;           // Next vfs in list
-    struct vfsops* vfs_op;           // VFS operations
-    struct vnode* vfs_vnodecovered; // Vnode that this VFS covers
-    int vfs_flag;                   // VFS flags
-    int vfs_bsize;                  // Native block size
-    void* vfs_data;                 // Private data for specific file system
+    struct vfs* vfs_next;               // Next vfs in list
+    struct vfsops* vfs_op;              // VFS operations
+    struct vnode* vfs_vnodecovered;     // Vnode that this VFS covers
+    int vfs_flag;                       // VFS flags
+    int vfs_bsize;                      // Native block size
+    void* vfs_data;                     // Private data for specific file system
 };
 
 struct vnodeops {
@@ -108,5 +108,4 @@ struct statfs {
     int32_t f_spare[7];              // Spare for future use
 };
 
-#define VN_HOLD(vp)    ((vp)->v_count++)
-#define VN_RELE(vp)    do { if (--(vp)->v_count == 0) vn_inactive(vp); } while (0)
+extern vfs* root_vfs;
