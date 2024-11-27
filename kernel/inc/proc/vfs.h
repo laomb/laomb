@@ -108,4 +108,4 @@ struct statfs {
     int32_t f_spare[7];              // Spare for future use
 };
 
-extern vfs* root_vfs;
+extern struct vfs* root_vfs;
