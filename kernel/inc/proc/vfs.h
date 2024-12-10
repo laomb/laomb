@@ -17,6 +17,38 @@ enum vtype {
     VBAD    // Bad type
 };
 
+struct vattr {
+    enum vtype va_type;              // Vnode type
+    uint16_t va_mode;                // Access mode
+    uint16_t va_uid;                 // Owner user ID
+    uint16_t va_gid;                 // Owner group ID
+    int32_t va_fsid;                 // File system ID
+    int32_t va_nodeid;               // Node ID
+    uint16_t va_nlink;               // Link count
+    uint32_t va_size;                // File size in bytes
+    int32_t va_blocksize;            // Block size
+    int64_t va_rdev;                 // Device ID (if applicable)
+    int32_t va_blocks;               // Space used in blocks
+};
+
+struct statfs {
+    int32_t f_type;                  // Type of file system
+    int32_t f_bsize;                 // Block size
+    int32_t f_blocks;                // Total blocks
+    int32_t f_bfree;                 // Free blocks
+    int32_t f_bavail;                // Free blocks for non-superuser
+    int32_t f_files;                 // Total number of file nodes
+    int32_t f_ffree;                 // Free file nodes
+    int64_t f_fsid;                  // File system ID
+    int32_t f_spare[7];              // Spare for future use
+};
+
+struct fid {
+    int32_t fid_fsid;               // Filesystem ID
+    int32_t fid_nodeid;             // Node ID
+    int32_t fid_gen;                // Generation number
+};
+
 struct vnode;
 struct vfs;
 
@@ -80,32 +112,6 @@ struct vnode {
     struct vfs* v_vfsp;              // VFS this vnode belongs to
     enum vtype v_type;               // Type of vnode
     void* v_data;                    // Private data (e.g., inode or network data)
-};
-
-struct vattr {
-    enum vtype va_type;              // Vnode type
-    uint16_t va_mode;                // Access mode
-    uint16_t va_uid;                 // Owner user ID
-    uint16_t va_gid;                 // Owner group ID
-    int32_t va_fsid;                 // File system ID
-    int32_t va_nodeid;               // Node ID
-    uint16_t va_nlink;               // Link count
-    uint32_t va_size;                // File size in bytes
-    int32_t va_blocksize;            // Block size
-    int64_t va_rdev;                 // Device ID (if applicable)
-    int32_t va_blocks;               // Space used in blocks
-};
-
-struct statfs {
-    int32_t f_type;                  // Type of file system
-    int32_t f_bsize;                 // Block size
-    int32_t f_blocks;                // Total blocks
-    int32_t f_bfree;                 // Free blocks
-    int32_t f_bavail;                // Free blocks for non-superuser
-    int32_t f_files;                 // Total number of file nodes
-    int32_t f_ffree;                 // Free file nodes
-    int64_t f_fsid;                  // File system ID
-    int32_t f_spare[7];              // Spare for future use
 };
 
 extern struct vfs* root_vfs;

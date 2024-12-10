@@ -3,3 +3,5 @@ build/
 build/*
 build
 ./build
+.cache
+compile_commands.json
