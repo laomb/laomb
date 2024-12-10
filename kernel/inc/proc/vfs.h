@@ -68,7 +68,6 @@ struct vfs {
     struct vnode* covered_node;    // Vnode that this VFS covers
     int flags;                     // VFS flags
     int block_size;                // Native block size
-    void* private_data;            // Private file system data
 };
 
 struct vnode_ops {
@@ -111,7 +110,6 @@ struct vnode {
     };
     struct vfs* vfs;                  // Parent VFS
     enum vtype type;                  // Type of vnode
-    void* private_data;               // Private data (inode, network state, etc.)
 };
 
 extern struct vfs* root_vfs;
