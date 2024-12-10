@@ -37,7 +37,7 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
     if (rootfs_idx == -1) {
         kprintf("Failed to initialize root filesystem.\n");
         DEBUG("Failed to initialize root filesystem.");
-        for (;;);
+        for (;;) hlt();
     }
     DEBUG("Root filesystem initialised at 0x%p", root_vfs);
 
@@ -51,7 +51,7 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
         print("%c", c);
     }
 
-    for (;;) ;
+    for (;;) hlt();
 }
 
 
@@ -100,5 +100,5 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
 
     sched_init();
 
-    for(;;) ;
+    for(;;) hlt();
 }
