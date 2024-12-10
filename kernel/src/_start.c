@@ -22,7 +22,9 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
 
 #include <proc/sched.h>
 #include <video/print.h>
+
 #include <driver/keyboard.h>
+#include <driver/pci.h>
 
 #include <proc/vfs.h>
 #include <proc/ramfs.h>
@@ -40,6 +42,12 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
         for (;;) hlt();
     }
     DEBUG("Root filesystem initialised at 0x%p", root_vfs);
+
+    DEBUG("Looking for PCI Devices");
+    pci_init();
+
+    DEBUG("Looking for the Realtek RTL8029AS");
+    // pci_device_t* dev = pci_find_device(0x10EC, 0x8029); // Realtek RTL8029AS ID
 
     DEBUG("Enabling the Programable Interrupt Controller");
     pic_enable();

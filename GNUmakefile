@@ -45,13 +45,11 @@ cdimage:
 
 	@echo "ISO image created at $(BUILD_DIR)/image.iso"
 
-
-
 hyper-bootloader:
 	@rm -rf $(HYPER_DIR)/build
 	@mkdir -p $(HYPER_DIR)/build
 	@cd $(HYPER_DIR)/build && cmake .. -DHYPER_ARCH=i686 -DHYPER_PLATFORM=bios -DCMAKE_TOOLCHAIN_FILE=$(EXTERNAL_DIR)/toolchain_i686_elf.cmake
-	@cd $(HYPER_DIR)/build && make VERBOSE=1 -j$(nproc) 
+	@cd $(HYPER_DIR)/build && make VERBOSE=1 -j$(CORES)
 
 reinstall-hyper:
 	@rm -rf $(HYPER_DIR)/
@@ -59,43 +57,16 @@ reinstall-hyper:
 	@make hyper-bootloader
 
 run:
-	@clear	
-	@qemu-system-i386 -drive format=raw,file=$(BUILD_DIR)/image.hdd,if=ide,index=0 \
-		-m 64M -cpu pentium \
-		-machine pc-i440fx-2.9,acpi=off \
-		-device cirrus-vga \
-		-debugcon stdio \
-		--no-reboot --no-shutdown \
-		-serial file:$(BUILD_DIR)/serial_output.txt \
-		-d int \
-		-D $(BUILD_DIR)/qemu_interrupt.log
+	@clear
+	@$(QEMU_RUN_HDD)
 
 run-iso:
-	@clear	
-	@qemu-system-i386 -cdrom $(BUILD_DIR)/image.iso \
-		-m 64M -cpu pentium \
-		-machine pc-i440fx-2.9,acpi=off \
-		-device cirrus-vga \
-		-debugcon stdio \
-		--no-reboot --no-shutdown \
-		-serial file:$(BUILD_DIR)/serial_output.txt \
-		-d int \
-		-D $(BUILD_DIR)/qemu_interrupt.log
+	@clear
+	@$(QEMU_RUN_ISO)
 
 debug:
 	@clear
-	@qemu-system-i386 -drive format=raw,file=$(BUILD_DIR)/image.hdd,if=ide,index=0 \
-		-m 64M -cpu pentium \
-		-machine pc-i440fx-2.9,acpi=off \
-		-device cirrus-vga \
-		-debugcon stdio \
-		--no-reboot --no-shutdown \
-		-serial file:$(BUILD_DIR)/serial_output.txt \
-		-d int \
-		-D $(BUILD_DIR)/qemu_interrupt.log \
-		-s -S & \
-		sleep 2 && \
-		gdb -ex "file $(BUILD_DIR)/kernel.bin" -ex "target remote localhost:1234"
+	@$(QEMU_DEBUG)
 
 release: kernel
 	@$(STRIP) $(BUILD_DIR)/kernel.bin
