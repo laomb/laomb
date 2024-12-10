@@ -8,6 +8,14 @@
 
 #define JOB_KERNEL_STACK_SIZE 4096
 
+#define MAX_HANDLES 256
+
+struct file_handle {
+    struct vnode* vnode;
+    uint32_t flags;
+    bool valid;
+};
+
 typedef enum {
     TASK_RUNNING,
     TASK_READY,
@@ -45,7 +53,6 @@ struct JCB {
     uint64_t user_time;                 // CPU time used in user mode (in ticks)
     uint64_t system_time;               // CPU time used in system mode (in ticks)
 
-
     // TODO: once IPC is implemented
     // uint64_t signal_mask;               // Mask of blocked signals
     // uint64_t pending_signals;           // Pending signals
@@ -53,9 +60,8 @@ struct JCB {
     // int message_queue_id;               // ID of an IPC message queue
     // void* shared_memory_ptr;            // Pointer to shared memory segment
 
-    // TODO: once VFS
     struct spinlock fd_lock;
-    struct fd* file_descs[256];
+    struct file_handle handles[MAX_HANDLES];
     
     struct JCB* first_child;
     struct JCB* next_sibling;
