@@ -9,6 +9,7 @@ struct ramfs_node {
     struct ramfs_node* children; // Child nodes (if directory)
     struct ramfs_node* next;     // Sibling nodes
     char* name;                  // Name of the file or directory
+    int size;                    // Size of the file
     void* data;                  // File data (for files)
 };
 

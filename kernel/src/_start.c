@@ -24,11 +24,22 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
 #include <video/print.h>
 #include <driver/keyboard.h>
 
+#include <proc/vfs.h>
+#include <proc/ramfs.h>
+
 [[noreturn]] void job0() {
     DEBUG("Scheduler initialised");
 
     keyboard_init();
     DEBUG("Keyboard initialised");
+
+    int rootfs_idx = ramfs_init();
+    if (rootfs_idx == -1) {
+        kprintf("Failed to initialize root filesystem.\n");
+        DEBUG("Failed to initialize root filesystem.");
+        for (;;);
+    }
+    DEBUG("Root filesystem initialised at 0x%p", root_vfs);
 
     DEBUG("Enabling the Programable Interrupt Controller");
     pic_enable();

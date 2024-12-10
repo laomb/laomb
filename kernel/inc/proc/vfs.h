@@ -49,6 +49,15 @@ struct fid {
     int32_t gen;                 // Generation number
 };
 
+#define NAME_MAX 255
+
+struct dirent {
+    uint32_t d_ino;              // Inode number
+    uint16_t d_reclen;           // Length of this record
+    uint8_t d_type;              // File type (similar to vtype)
+    char d_name[NAME_MAX + 1];   // File name (null-terminated)
+};
+
 struct vnode;
 struct vfs;
 
@@ -103,7 +112,7 @@ struct vnode {
     uint16_t shared_lock_count;       // Shared lock count
     uint16_t exclusive_lock_count;    // Exclusive lock count
     struct vfs* mount_point;          // Mounted VFS, if this vnode is a mount point
-    struct vnode_ops ops;             // Vnode operations
+    struct vnode_ops* ops;            // Vnode operations
     union {
         void* socket_data;            // IPC socket
         void* stream_data;            // Stream data
@@ -113,3 +122,4 @@ struct vnode {
 };
 
 extern struct vfs* root_vfs;
+struct vnode* vfs_traverse_path(const char* path);
