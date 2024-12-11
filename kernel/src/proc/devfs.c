@@ -42,7 +42,7 @@ static int devfs_get_statfs(struct vfs* vfs, struct statfs* stat) {
     stat->avail_blocks = 0;
     stat->total_files = 0;
     stat->free_files = 0;
-    stat->fs_id = (int64_t)vfs;
+    stat->fs_id = (int64_t)(uintptr_t)vfs;
     return 0;
 }
 
