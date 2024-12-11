@@ -28,6 +28,7 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
 
 #include <proc/vfs.h>
 #include <proc/ramfs.h>
+#include <driver/ata.h>
 
 [[noreturn]] void job0() {
     DEBUG("Scheduler initialised");
@@ -49,8 +50,29 @@ struct ultra_framebuffer_attribute* framebuffer = NULL;
     // DEBUG("Looking for the Realtek RTL8029AS");
     // pci_device_t* dev = pci_find_device(0x10EC, 0x8029); // Realtek RTL8029AS ID
 
+    DEBUG("Initialising the Advanced Technology Attachment driver");
+    ata_init();
+
     DEBUG("Enabling the Programable Interrupt Controller");
     pic_enable();
+
+    uint8_t buffer[512];
+    read_sectors_ATA_PIO(0, 1, buffer);
+    for (int i = 0; i < 512; i++) {
+        if (i % 16 == 0) {
+            print("\n");
+        }
+        print("%c ", buffer[i]);
+    }
+    print("\n");
+    for (int i = 0; i < 512; i++) {
+        if (i % 16 == 0) {
+            print("\n");
+        }
+        print("0x%02x ", buffer[i]);
+    }
+    print("\n");
+
     while (1) {
         char c = keyboard_getchar();
         if (c == -1) {
