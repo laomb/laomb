@@ -5,24 +5,28 @@ BUILD_DIR := $(abspath ../build)
 FBOOT_SRC := fboot.asm
 SPARK_SRC := spark.asm
 FBOOT_BIN := $(BUILD_DIR)/fboot.bin
-SPARK_BIN := $(BUILD_DIR)/spark.sys
+SPARK_BIN := $(BUILD_DIR)/spark.hex
+SPARK_MAP := $(BUILD_DIR)/spark.map
+
+ASM := fasm
 
 all: $(FBOOT_BIN) $(SPARK_BIN)
 
-$(FBOOT_BIN): $(FBOOT_SRC)
-	@mkdir -p $(BUILD_DIR)
-	@nasm -f bin -Xvc $< -o $@ 2> $(BUILD_DIR)/fboot.rawmap
-	@grep 'warning: LABEL:' $(BUILD_DIR)/fboot.rawmap | \
-	sed -E 's/.*warning: LABEL: ([^ ]+) @ ([0-9]+).*/\2 \1/' | \
-	awk '{ printf "LABEL: %s @ 0x%04X\n", $$2, $$1 }' > $(BUILD_DIR)/fboot.map
-	@rm -rf $(BUILD_DIR)/fboot.rawmap
+$(BUILD_DIR):
+	@mkdir -p $@
 
+$(FBOOT_BIN): $(FBOOT_SRC) | $(BUILD_DIR)
+	@$(ASM) $< $@
 
-$(SPARK_BIN): $(SPARK_SRC)
-	@mkdir -p $(BUILD_DIR)
-	@nasm -f bin $< -o $@
+$(SPARK_BIN): $(SPARK_SRC) | $(BUILD_DIR)
+	@rm -f $(SPARK_MAP)
+	@$(ASM) $< $@ 2>&1 | awk -v mapfile="$(SPARK_MAP)" '\
+		index($$0, "flat assembler ") == 1 { next } \
+		$$0 ~ /LABEL / { sub("^~LABEL ", "", $$0); print > mapfile; next } \
+		sub(/[0-9]+ passes, [0-9]+ bytes\./, "") { next } \
+		{ print }'
 
 clean:
-	@rm -rf $(BUILD_DIR)/fboot.bin $(BUILD_DIR)/spark.sys
+	@rm -rf $(BUILD_DIR)/fboot.bin $(BUILD_DIR)/spark.hex $(SPARK_MAP)
 
 .PHONY: all clean

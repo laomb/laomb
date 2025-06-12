@@ -1,313 +1,253 @@
-org 0x7c00
-bits 16
+org 0x7C00
+use16
+format binary
 
-%macro LABEL 1
-%push
-%assign __addr__ ($ - $$)
-%warning LABEL: %1 @ __addr__
-%1:
-%pop
-%endmacro
+define LOAD_SEG  0x0000
+define LOAD_OFF  0x0500
+define ENDL      13, 10
 
-%define FAT_BUFFER 0x0500
-%define DIR_BUFFER 0x2000
-
-jmp short _entry
+jmp short _start
 nop
 
-LABEL bdb_oem
-    db "abcdefgh"
-LABEL bdb_bytes_per_sector
-    dw 512
-LABEL bdb_sectors_per_cluster
-    db 1
-LABEL bdb_reserved_sectors
-    dw 1
-LABEL bdb_fat_count
-    db 2
-LABEL bdb_dir_entries_count
-    dw 0E0h
-LABEL bdb_total_sectors
-    dw 2880
-LABEL bdb_media_descriptor_type
-    db 0F0h 
-LABEL bdb_sectors_per_fat
-    dw 9
-LABEL bdb_sectors_per_track
-    dw 18
-LABEL bdb_heads
-    dw 2
-LABEL bdb_hidden_sectors
-    dd 0
-LABEL bdb_large_sector_count
-    dd 0
+bdb_oem                  db 'MSWIN8.8'
+bdb_bytes_per_sector     dw 512
+bdb_sectors_per_cluster  db 1
+bdb_reserved_sectors     dw 1
+bdb_fat_count            db 2
+bdb_dir_entries_count    dw 0E0h
+bdb_total_sectors        dw 2880
+bdb_media_descriptor     db 0F0h
+bdb_sectors_per_fat      dw 9
+bdb_sectors_per_track    dw 18
+bdb_heads                dw 2
+bdb_hidden_sectors       dd 0
+bdb_large_sector_count   dd 0
 
-LABEL ebr_drive_number
-    dw 0
-LABEL ebr_signature
-    db 29h
-LABEL ebr_volume_id
-    db 12h, 34h, 56h, 78h
-LABEL ebr_volume_label
-    db 'LAOMB    OS'
-LABEL ebr_system_id
-    db 'FAT12   '
+ebr_drive_number         db 0
+                         db 0
+ebr_signature            db 29h
+ebr_volume_id            db 12h,34h,56h,78h
+ebr_volume_label         db 'LAOMB    OS'
+ebr_system_id            db 'FAT12   '
 
-LABEL _entry
-    xor ax,ax
-    mov ds,ax
-    mov es,ax
-    mov ss,ax
+_start:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7C00
 
-    mov sp,0x7c00
-
-    push es
-    push word start
+    push word 0
+    push word main
     retf
 
-LABEL start
-    mov [ebr_drive_number], dx
-
-    mov cx, [bdb_sectors_per_fat]
-    mov si, 0
-    mov bx, FAT_BUFFER
-.load_fat_loop:
-    mov ax, [bdb_reserved_sectors]
-    add ax, si 
-    push bx
-    push ax
-    call read_sector
-    pop ax
-    pop bx
-    jc disk_error
-    add bx, 512
-    inc si
-    loop .load_fat_loop
-
-    mov al, [bdb_fat_count]
-    mov ah, 0
-    mul word [bdb_sectors_per_fat]
-    add ax, [bdb_reserved_sectors]
-    mov di, ax
+main:
+    mov [ebr_drive_number], dl
     
-    mov cx, 14
-    mov bx, DIR_BUFFER
-.load_root_loop:
-    push bx
-    push di
-    call read_sector
-    pop di
-    pop bx
-    jc disk_error
-    add bx, 512
-    inc di
-    loop .load_root_loop
+    push es
+    mov ah, 08h
+    int 13h
+    jc floppy_error
+    pop es
 
-    mov si, DIR_BUFFER
-    mov cx, 224
-.search_loop:
-    cmp byte [si], 0
-    je file_not_found
-    cmp byte [si], 0xE5
-    je next_entry
-    mov al, [si+11]
-    test al, 0x10
-    jnz next_entry
+    and cl, 0x3F
+    xor ch, ch
+    mov [bdb_sectors_per_track], cx
+    inc dh
+    mov byte [bdb_heads], dh
 
-    push si
-    call compare_filename
-    pop si
-    cmp al, 1
-    jne next_entry
-
-    mov ax, [si+26]
-    cmp ax, 2
-    jb file_not_found
-    mov [file_cluster], ax
-    mov ax, [si+28]
-    cmp ax, 0xFFFF
-    ja file_too_big
-    mov [file_size], ax
-    jmp load_file
-
-LABEL next_entry
-    add si, 32
-    loop start.search_loop
-
-LABEL file_not_found
-    mov si, msg_file_not_found
-    call print_string
-    jmp wait_and_reset
-
-LABEL file_too_big
-    mov si, msg_file_too_big
-    call print_string
-    jmp wait_and_reset
-
-LABEL load_file
-    mov ax, 0x0001
-    mov es, ax
-    xor di, di
-
-.load_cluster:
-    mov ax, [file_cluster]
-    sub ax, 2
-    add ax, 33               ; Convert to LBA (cluster - 2 + 33)
-
-    mov bx, di
-    push bx
+    mov ax, [bdb_sectors_per_fat]
+    movzx bx, [bdb_fat_count]
+    mul bx
+    add ax, [bdb_reserved_sectors]
     push ax
-    call read_sector
-    pop ax
-    pop bx
-    jc disk_error
 
-    mov ax, [file_size]
-    cmp ax, 512
-    jae load_full_cluster
-
-    add di, ax
-    mov word [file_size], 0
-    jmp load_done
-
-LABEL load_full_cluster
-    add di, 512
-    sub ax, 512
-    mov [file_size], ax
-
-    mov ax, [file_cluster]
-    call get_fat_entry
-    cmp ax, 0xFF8
-    jae load_done
-    cmp ax, 0
-    je load_done
-    mov [file_cluster], ax
-    cmp word [file_size], 0
-    jne load_file.load_cluster
-
-LABEL load_done
-    jmp 0x0001:0x0000
-
-LABEL read_sector
-    push ax
-    mov dx, ax
-    mov ax, dx
-    mov bx, 36
+    mov ax, [bdb_dir_entries_count]
+    shl ax, 5
     xor dx, dx
-    div bx
-    mov ch, al
-
-    mov ax, dx
-    mov bx, 18
-    xor dx, dx
-    div bx
-    mov dh, al
-    mov al, dl
-    inc al
+    div word [bdb_bytes_per_sector]
+    test dx, dx
+    jz .root_dir_ready
+    inc ax
+.root_dir_ready:
     mov cl, al
-
-    mov ax, [ebr_drive_number]
-    mov dl, al
-    mov ah, 0x02
-    mov al, 1
-    int 0x13
     pop ax
-    jc read_error
-    clc
-    ret
+    mov dl, [ebr_drive_number]
+    mov bx, buffer
+    call disk_read
 
-LABEL read_error
-    stc
-    ret
+    xor bx, bx
+    mov di, buffer
 
-LABEL get_fat_entry
-    push bx
+.search_spark:
+    mov si, target_file
+    mov cx, 11
     push di
-    mov bx, ax
-    mov ax, bx
+    repe cmpsb
+    pop di
+    je .found_spark
+
+    add di, 32
+    inc bx
+    cmp bx, [bdb_dir_entries_count]
+    jl .search_spark
+
+    jmp kernel_not_found_error
+
+.found_spark:
+    mov ax, [di+26]
+    mov [curr_cluster], ax
+    mov ax, [bdb_reserved_sectors]
+    mov bx, buffer
+    mov cx, [bdb_sectors_per_fat]
+    mov dl, [ebr_drive_number]
+    call disk_read
+
+    mov bx, LOAD_SEG
+    mov es, bx
+    mov bx, LOAD_OFF
+
+.load_spark_loop:
+    mov ax, [curr_cluster]
+    add ax, 31
+    mov cl, 1
+    mov dl, [ebr_drive_number]
+    call disk_read
+
+    add bx, [bdb_bytes_per_sector]
+
+    mov ax, [curr_cluster]
     mov cx, 3
     mul cx
     mov cx, 2
-    xor dx, dx
     div cx
-    mov di, ax
-    add di, FAT_BUFFER
-    mov ax, [di]
-    test bx, 1
-    jnz fat_entry_odd
-    and ax, 0x0FFF
-    jmp fat_entry_done
-fat_entry_odd:
+
+    mov si, buffer
+    add si, ax
+    mov ax, [ds:si]
+
+    or dx, dx
+    jz .even
+.odd:
     shr ax, 4
-fat_entry_done:
-    pop di
-    pop bx
-    ret
+    jmp .next_cluster
+.even:
+    and ax, 0x0FFF
+.next_cluster:
+    cmp ax, 0x0FF8
+    jae .read_finish
+    mov [curr_cluster], ax
+    jmp .load_spark_loop
 
-LABEL compare_filename
+.read_finish:
+    mov dl, [ebr_drive_number]
+
+    mov ax, LOAD_SEG
+    mov ds, ax
+    mov es, ax
+
+    jmp LOAD_SEG:LOAD_OFF
+
+    cli
+    hlt
+
+floppy_error:
+    mov si, msg_disk_error
+    call puts
+    jmp wait_key_and_reboot
+
+kernel_not_found_error:
+    mov si, msg_not_found
+    call puts
+    jmp wait_key_and_reboot
+
+wait_key_and_reboot:
+    mov si, msg_key_to_reboot
+    call puts
+
+    mov ah, 0
+    int 16h
+    jmp 0FFFFh:0
+
+.halt:
+    cli
+    hlt
+
+puts:
     push si
-    push di
-    push cx
-
-    mov cx, 11
-    mov di, target_filename
-    repe cmpsb
-    jne .not_equal
-    mov al, 1
-    jmp .done
-.not_equal:
-    mov al, 0
+    push ax
+    push bx
+.put_loop:
+    lodsb
+    or al, al
+    jz .done
+    mov ah, 0x0E
+    mov bh, 0
+    int 0x10
+    jmp .put_loop
 .done:
-    pop cx
-    pop di
+    pop bx
+    pop ax
     pop si
     ret
 
-LABEL print_string
+lba_to_chs:
     push ax
-.print_string_loop:
-    lodsb
-    cmp al, 0
-    je .done_print
-    mov ah, 0x0E
-    int 0x10
-    jmp .print_string_loop
-.done_print:
+    push dx
+    xor dx, dx
+    div word [bdb_sectors_per_track]
+    inc dx
+    mov cx, dx
+    xor dx, dx
+    div word [bdb_heads]
+    mov dh, dl
+    mov ch, al
+    shl ah, 6
+    or cl, ah
+    pop ax
+    mov dl, al
     pop ax
     ret
 
-LABEL wait_key
-    mov ah, 0
-    int 0x16
+disk_read:
+    pusha
+    push cx
+    call lba_to_chs
+    pop ax
+    mov ah, 02h
+    mov di, 3
+.retry:
+    pusha
+    stc
+    int 13h
+    jnc .read_ok
+    popa
+    call disk_reset
+    dec di
+    test di, di
+    jnz .retry
+    jmp floppy_error
+.read_ok:
+    popa
+    popa
     ret
 
-LABEL cold_reset
-    int 0x19
-    jmp $
+disk_reset:
+    pusha
+    mov ah, 0
+    stc
+    int 13h
+    jc floppy_error
+    popa
+    ret
 
-LABEL wait_and_reset
-    call wait_key
-    jmp cold_reset
+msg_disk_error: db 'Floppy disk error!', ENDL, 0
+msg_not_found:  db 'SPARK.HEX not found!', ENDL, 0
+msg_key_to_reboot: db 'Press any key to reboot.', ENDL, 0
+target_file:    db 'SPARK   HEX'
+curr_cluster:   dw 0
 
-LABEL disk_error
-    mov si, msg_disk_error
-    call print_string
-    jmp wait_and_reset
-
-LABEL file_cluster
-    dw 0
-LABEL file_size
-    dw 0
-
-LABEL target_filename
-    db "SPARK   SYS"
-
-LABEL msg_file_not_found
-    db "NF", 0
-LABEL msg_file_too_big
-    db "BIG", 0
-LABEL msg_disk_error
-    db "ERR", 0
-
-times 510-($-$$) db 0
+rb 510 - ($ - $$)
 dw 0xAA55
+
+buffer:
