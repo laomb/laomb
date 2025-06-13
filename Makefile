@@ -56,11 +56,21 @@ run-bochs-floppy: $(BUILD_DIR)/a.img
 
 clean:
 	@clear
-	@rm -rf $(BUILD_DIR)/
+	@make -C spark clean
+	@rm -rf $(BUILD_DIR)/a.img $(BUILD_DIR)/qemu_interrupt.log
+	@rm -f $(BUILD_DIR)/laomb.{aux,log,pdf,tex}
 
 reset:
 	@make clean
 	@clear
 	@make
 
-.PHONY: all loom disk run-disk run-floppy clean reset floppy spark run-bochs-floppy
+docs: $(BUILD_DIR)/laomb.pdf
+
+$(BUILD_DIR)/laomb.pdf: docs/laomb.tex
+	@lualatex -output-directory=$(BUILD_DIR) $<
+
+watch-docs:
+	@while inotifywait -e close_write docs/laomb.tex; do make docs; done
+
+.PHONY: all loom disk run-disk run-floppy clean reset floppy spark run-bochs-floppy docs watch-docs

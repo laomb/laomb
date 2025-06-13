@@ -1,0 +1,3 @@
+[submodule "docs/bios-re"]
+	path = docs/bios-re
+	url = https://github.com/laomb/laomb-bios-re
