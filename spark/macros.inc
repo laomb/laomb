@@ -31,7 +31,6 @@ macro hex_digit val
 	end if
 }
 
-
 macro enter_real_mode {
 	use32
 	jmp GDT_SEL_CODE16:.pmode16

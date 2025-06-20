@@ -112,6 +112,9 @@ main:
     add ax, 31
     mov cl, 1
     mov dl, [ebr_drive_number]
+    cmp bx, 0x7A00
+    jae too_large_error
+
     call disk_read
 
     add bx, [bdb_bytes_per_sector]
@@ -160,6 +163,10 @@ kernel_not_found_error:
     mov si, msg_not_found
     call puts
     jmp wait_key_and_reboot
+
+too_large_error:
+    mov si, msg_too_large
+    call puts
 
 wait_key_and_reboot:
     mov si, msg_key_to_reboot
@@ -241,9 +248,10 @@ disk_reset:
     popa
     ret
 
-msg_disk_error: db 'Floppy disk error!', ENDL, 0
-msg_not_found:  db 'SPARK.HEX not found!', ENDL, 0
-msg_key_to_reboot: db 'Press any key to reboot.', ENDL, 0
+msg_disk_error: db 'Floppy error!', ENDL, 0
+msg_not_found:  db 'Not found!', ENDL, 0
+msg_too_large:  db 'SPARK too large!', ENDL, 0
+msg_key_to_reboot: db 'Press any key!', ENDL, 0
 target_file:    db 'SPARK   HEX'
 curr_cluster:   dw 0
 
