@@ -31,7 +31,7 @@ disk:
 	@mcopy -i $(BUILD_DIR)/disk.hdd@@1M $(BUILD_DIR)/kernel.bin ::/
 
 QEMU_COMMON_FLAGS := -m 64M -cpu pentium \
-		-machine pc-i440fx-2.9 \
+		-machine pc-i440fx-7.2 \
 		-device cirrus-vga \
 		-device ne2k_pci,netdev=net0 \
 		-netdev user,id=net0,hostfwd=tcp::2222-:22 \
