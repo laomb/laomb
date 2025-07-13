@@ -16,7 +16,7 @@ floppy:
 	@dd if=/dev/zero of=$(BUILD_DIR)/a.img bs=512 count=2880
 	@mkfs.fat -F 12 -n LAOMB $(BUILD_DIR)/a.img
 
-	@dd if=$(BUILD_DIR)/fboot.bin of=$(BUILD_DIR)/a.img bs=1 skip=60 seek=60 count=452 conv=notrunc
+	@dd if=$(BUILD_DIR)/fboot.bin of=$(BUILD_DIR)/a.img bs=1 count=512 conv=notrunc
 
 	@mcopy -i $(BUILD_DIR)/a.img $(BUILD_DIR)/spark.hex ::SPARK.HEX
 	#@mcopy -i $(BUILD_DIR)/a.img $(BUILD_DIR)/kernel.bin ::

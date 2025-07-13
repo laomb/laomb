@@ -46,6 +46,8 @@ EMIT_LABEL _protected_mode
 	
 	call print_e820_map
 
+	call check_drive_parameters
+
 	mov esi, msg_done
 	call print_str
 
@@ -63,3 +65,4 @@ include 'source/serial.asm'
 include 'source/print.asm'
 include 'source/bitmap.asm'
 include 'source/e820.asm'
+include 'source/disk.asm'

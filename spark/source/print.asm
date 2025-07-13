@@ -149,6 +149,8 @@ EMIT_LABEL _print_nibble
 
 use16
 EMIT_LABEL print_char_rm
+    call serial_write_char_rm
+
     push ax
     push bx
     push dx

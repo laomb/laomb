@@ -9,7 +9,7 @@ define ENDL      13, 10
 jmp short _start
 nop
 
-bdb_oem                  db 'MSWIN8.8'
+bdb_oem                  db 'FLOPPY..'
 bdb_bytes_per_sector     dw 512
 bdb_sectors_per_cluster  db 1
 bdb_reserved_sectors     dw 1

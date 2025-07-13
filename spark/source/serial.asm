@@ -62,3 +62,16 @@ EMIT_LABEL serial_write_char
     pop eax
     out dx, al
     ret
+
+use16
+EMIT_LABEL serial_write_char_rm
+.wait:
+    push ax
+    mov dx, COM1_BASE + REG_LSR
+    in al, dx
+    test al, LSR_THRE
+    jz .wait
+    mov dx, COM1_BASE + REG_DATA
+    pop ax
+    out dx, al
+    ret
