@@ -58,14 +58,14 @@ run-disk:
 run-bochs-floppy: $(BUILD_DIR)/a.img
 	@bochs -qf bochsrc_floppy.txt
 
-run-gdb-floppy: $(BUILD_DIR)/a.img $(BUILD_DIR)/.gdbinit
+run-debug-floppy: $(BUILD_DIR)/a.img
 	@clear
 	@qemu-system-i386 \
 		-drive format=raw,file=$(BUILD_DIR)/a.img,if=floppy \
 		$(QEMU_COMMON_FLAGS) \
 		-S -gdb tcp::1234 &
 	@sleep 1
-	@python3 tools/adbg.py
+	@python3 tools/adbg/adbg.py
 
 clean:
 	@clear
