@@ -82,7 +82,7 @@ check_disk_parameters:
 .skip_edd:
 .done_probe:
     enter_protected_mode
-    popa
+    popad
     ret
 
 .err_fail:
@@ -90,7 +90,7 @@ check_disk_parameters:
     call print_str_rm
 
     enter_protected_mode
-    popa
+    popad
     ret
 
 print_disk_parameters:
@@ -188,7 +188,7 @@ print_disk_parameters:
     call print_endl
 
 .done:
-    popa
+    popad
     ret
 
 ; in EAX -> lba
@@ -197,29 +197,33 @@ print_disk_parameters:
 ;     cx [6:15] -> track
 lba_to_chs:
     push eax
+    push esi
 
     xor edx, edx
-    div byte [drive_geometry+DISK_SECTORS_PER_TRACK]
+    movzx esi, byte [drive_geometry+DISK_SECTORS_PER_TRACK]
+    div esi
 
     inc dx
     mov cx, dx
 
     xor edx, edx
-    div byte [drive_geometry+DISK_HEAD_COUNT]
+    movzx esi, byte [drive_geometry+DISK_HEAD_COUNT]
+    div esi
 
     mov dh, dl
     mov ch, al
     shl ah, 6
     or cl, ah
 
+    pop esi
     pop eax
     ret
 
 
 ; in dl -> drive#
-;	 eax -> lba
-;	 cx -> sector count
-; 	 edi -> buffer
+;    eax -> lba
+;    cx  -> sector count
+;    edi -> buffer
 disk_read:
     pushad
 
@@ -230,24 +234,32 @@ disk_read:
     mov byte [si+0], 0x10
     mov byte [si+1], 0
     mov word [si+2], cx
-    mov word [si+4], bx
-    mov word [si+6], es
     mov dword [si+8], eax
     mov dword [si+12], 0
+
+    mov ebx, edi
+    shr ebx, 4
+    mov word [si+6], bx
+
+    mov ebx, edi
+    and ebx, 0x0F
+    mov word [si+4], bx
 
     enter_real_mode
     mov ah, 0x42
     int 0x13
-    jc .error
+    jc .error_hdd
     enter_protected_mode
-    jmp .done
+    jmp .done_ok
 
 .floppy_read:
     mov esi, eax
     mov edx, ecx
 
-.flop_loop:
+.rd_loop:
     push edi
+    push edx
+
     mov eax, esi
     call lba_to_chs
 
@@ -258,35 +270,47 @@ disk_read:
     mov dl, [boot_drive_number]
     mov al, 1
     int 0x13
-    jc .error
+    jc .error_floppy_read
 
     enter_protected_mode
 
+    pop edx
     pop edi
 
     add edi, 512
     inc esi
     dec edx
-    cmp edx, edx
-    jnz .flop_loop
+    test dx, dx
+    jnz .rd_loop
 
-    jmp .done
+    jmp .done_ok
 
-.error:
+.error_floppy_read:
     enter_protected_mode
+    pop edx
+    pop edi
+    jmp .error_common
 
-.done:
-    popa
+.error_hdd:
+    enter_protected_mode
+    jmp .error_common
+
+.done_ok:
+    popad
+    xor eax, eax
+    ret
+
+.error_common:
+    popad
+    mov eax, 1
     ret
 
 ; in dl -> drive#
-;	 eax -> lba
-;	 cx -> sector count
-; 	 ebx -> buffer
+;    eax -> lba
+;    cx  -> sector count
+;    edi -> buffer
 disk_write:
     pushad
-
-    linear_to_seg_off ebx, es, ebx, bx
 
     cmp dl, 0x80
     jb .floppy_write
@@ -295,43 +319,75 @@ disk_write:
     mov byte [si+0], 0x10
     mov byte [si+1], 0
     mov word [si+2], cx
-    mov word [si+4], bx
-    mov word [si+6], es
     mov dword [si+8], eax
     mov dword [si+12], 0
+
+    mov ebx, edi
+    shr ebx, 4
+    mov word [si+6], bx
+
+    mov ebx, edi
+    and ebx, 0x0F
+    mov word [si+4], bx
 
     enter_real_mode
     mov ah, 0x43
     int 0x13
-    jc .werror
+    jc .error_hdd
     enter_protected_mode
-    jmp .wdone
+    jmp .done_ok
 
 .floppy_write:
     mov esi, eax
     mov edx, ecx
 
 .wr_loop:
+    push edi
+    push edx
+
     mov eax, esi
     call lba_to_chs
+
     enter_real_mode
+    linear_to_seg_off edi, es, ebx, bx
+
     mov ah, 0x03
+    mov dl, [boot_drive_number]
     mov al, 1
     int 0x13
-    jc .werror
+    jc .error_floppy_write
+
     enter_protected_mode
 
-    add ebx, 512
+    pop edx
+    pop edi
+
+    add edi, 512
     inc esi
     dec edx
+    test dx, dx
     jnz .wr_loop
-    jmp .wdone
 
-.werror:
+    jmp .done_ok
+
+.error_floppy_write:
     enter_protected_mode
+    pop edx
+    pop edi
+    jmp .error_common
 
-.wdone:
-    popa
+.error_hdd:
+    enter_protected_mode
+    jmp .error_common
+
+.done_ok:
+    popad
+    xor eax, eax
+    ret
+
+.error_common:
+    popad
+    mov eax, 1
     ret
 
 msg_failed_to_get_drive_parameters: db 'Failed to get drive parameters!', 13, 10, 0

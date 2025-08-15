@@ -6,7 +6,7 @@ macro clsscr_rm
     mov ah, 0x00
     mov al, 0x03
     int 0x10
-    popa
+    popad
 }
 
 macro enter_real_mode {

@@ -48,7 +48,7 @@ get_e820_map:
 .done_e820:
     enter_protected_mode
 
-    popa
+    popad
     ret
 
 print_e820_map:
@@ -94,7 +94,7 @@ print_e820_map:
     jmp .loop
 
 .done:
-    popa
+    popad
     ret
 
 msg_base: db 'BASE: 0x', 0
