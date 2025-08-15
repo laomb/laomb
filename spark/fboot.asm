@@ -1,34 +1,33 @@
-org 0x7C00
+org 0x7c00
 use16
 format binary
 
-define LOAD_SEG  0x0000
-define LOAD_OFF  0x0500
-define ENDL      13, 10
+define load_seg 0x0000
+define load_off 0x0500
+define endl 13, 10
 
-jmp short _start
-nop
+    jmp short _start
+    nop
 
-bdb_oem                  db 'FLOPPY..'
-bdb_bytes_per_sector     dw 512
-bdb_sectors_per_cluster  db 1
-bdb_reserved_sectors     dw 1
-bdb_fat_count            db 2
-bdb_dir_entries_count    dw 0E0h
-bdb_total_sectors        dw 2880
-bdb_media_descriptor     db 0F0h
-bdb_sectors_per_fat      dw 9
-bdb_sectors_per_track    dw 18
-bdb_heads                dw 2
-bdb_hidden_sectors       dd 0
-bdb_large_sector_count   dd 0
+bdb_oem: db 'FLOPPY..'
+bdb_bytes_per_sector: dw 512
+bdb_sectors_per_cluster: db 1
+bdb_reserved_sectors: dw 1
+bdb_fat_count: db 2
+bdb_dir_entries_count: dw 0x0E0
+bdb_total_sectors: dw 2880
+bdb_media_descriptor: db 0x0F0
+bdb_sectors_per_fat: dw 9
+bdb_sectors_per_track: dw 18
+bdb_heads: dw 2
+bdb_hidden_sectors: dd 0
+bdb_large_sector_count: dd 0
 
-ebr_drive_number         db 0
-                         db 0
-ebr_signature            db 29h
-ebr_volume_id            db 12h,34h,56h,78h
-ebr_volume_label         db 'LAOMB    OS'
-ebr_system_id            db 'FAT12   '
+ebr_drive_number: dw 0
+ebr_signature: db 0x29
+ebr_volume_id: db 12h, 34h, 56h, 78h
+ebr_volume_label: db 'LAOMB OS'
+ebr_system_id: db 'FAT12 '
 
 _start:
     xor ax, ax
@@ -43,10 +42,10 @@ _start:
 
 main:
     mov [ebr_drive_number], dl
-    
+
     push es
-    mov ah, 08h
-    int 13h
+    mov ah, 0x08
+    int 0x13
     jc floppy_error
     pop es
 
@@ -103,9 +102,9 @@ main:
     mov dl, [ebr_drive_number]
     call disk_read
 
-    mov bx, LOAD_SEG
+    mov bx, load_seg
     mov es, bx
-    mov bx, LOAD_OFF
+    mov bx, load_off
 
 .load_spark_loop:
     mov ax, [curr_cluster]
@@ -145,11 +144,11 @@ main:
 .read_finish:
     mov dl, [ebr_drive_number]
 
-    mov ax, LOAD_SEG
+    mov ax, load_seg
     mov ds, ax
     mov es, ax
 
-    jmp LOAD_SEG:LOAD_OFF
+    jmp load_seg:load_off
 
     cli
     hlt
@@ -173,8 +172,8 @@ wait_key_and_reboot:
     call puts
 
     mov ah, 0
-    int 16h
-    jmp 0FFFFh:0
+    int 0x16
+    jmp 0x0FFFF:0
 
 .halt:
     cli
@@ -221,12 +220,12 @@ disk_read:
     push cx
     call lba_to_chs
     pop ax
-    mov ah, 02h
+    mov ah, 0x02
     mov di, 3
 .retry:
     pusha
     stc
-    int 13h
+    int 0x13
     jnc .read_ok
     popa
     call disk_reset
@@ -243,19 +242,19 @@ disk_reset:
     pusha
     mov ah, 0
     stc
-    int 13h
+    int 0x13
     jc floppy_error
     popa
     ret
 
-msg_disk_error: db 'Floppy error!', ENDL, 0
-msg_not_found:  db 'Not found!', ENDL, 0
-msg_too_large:  db 'SPARK too large!', ENDL, 0
-msg_key_to_reboot: db 'Press any key!', ENDL, 0
-target_file:    db 'SPARK   HEX'
-curr_cluster:   dw 0
+msg_disk_error: db 'Floppy error!', endl, 0
+msg_not_found: db 'Not found!', endl, 0
+msg_too_large: db 'SPARK too large!', endl, 0
+msg_key_to_reboot: db 'Press any key!', endl, 0
+target_file: db 'SPARK   HEX'
+curr_cluster: dw 0
 
-rb 510 - ($ - $$)
-dw 0xAA55
+    rb 510 - ($ - $$)
+    dw 0xAA55
 
 buffer:

@@ -1,6 +1,6 @@
 use32
 
-EMIT_LABEL print_char
+print_char:
     pushad
 
     push eax
@@ -24,131 +24,179 @@ EMIT_LABEL print_char
     popad
     ret
 
-EMIT_LABEL print_endl
+print_endl:
     mov al, 0x0d
     call print_char
     mov al, 0x0a
     call print_char
     ret
 
-EMIT_LABEL print_str
+print_str:
     pushad
 .next_char:
-    mov     al, [esi]
-    test    al, al
-    jz      .done_str
-    call    print_char
-    inc     esi
-    jmp     .next_char
+    mov al, [esi]
+    test al, al
+    jz .done_str
+    call print_char
+    inc esi
+    jmp .next_char
 .done_str:
     popad
     ret
 
-EMIT_LABEL print_hex8
+print_hex8:
     pushad
-    mov     bl, al
-    shr     al, 4
-    call    _print_nibble
-    mov     al, bl
-    and     al, 0xF
-    call    _print_nibble
+    mov bl, al
+    shr al, 4
+    call _print_nibble
+    mov al, bl
+    and al, 0xF
+    call _print_nibble
     popad
     ret
 
-EMIT_LABEL print_hex16
+print_hex16:
     pushad
-    mov     edx, eax
-    and     edx, 0xFFFF
+    mov edx, eax
+    and edx, 0xFFFF
 
-    mov     ecx, edx
-    shr     ecx, 12
-    mov     al, cl
-    call    _print_nibble
+    mov ecx, edx
+    shr ecx, 12
+    mov al, cl
+    call _print_nibble
 
-    mov     ecx, edx
-    shr     ecx,  8
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
+    mov ecx, edx
+    shr ecx, 8
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
 
-    mov     ecx, edx
-    shr     ecx,  4
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
+    mov ecx, edx
+    shr ecx, 4
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
 
-    mov     al, dl
-    and     al, 0xF
-    call    _print_nibble
-
-    popad
-    ret
-
-EMIT_LABEL print_hex32
-    pushad
-    mov     ebx, eax
-    
-    mov     ecx, ebx
-    shr     ecx, 28
-    mov     al, cl
-    call    _print_nibble
-
-    mov     ecx, ebx
-    shr     ecx, 24
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
-
-    mov     ecx, ebx
-    shr     ecx, 20
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
-
-    mov     ecx, ebx
-    shr     ecx, 16
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
-
-    mov     ecx, ebx
-    shr     ecx, 12
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
-
-    mov     ecx, ebx
-    shr     ecx,  8
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
-
-    mov     ecx, ebx
-    shr     ecx,  4
-    and     ecx, 0xF
-    mov     al, cl
-    call    _print_nibble
-
-    mov     al, bl
-    and     al, 0xF
-    call    _print_nibble
+    mov al, dl
+    and al, 0xF
+    call _print_nibble
 
     popad
     ret
 
-EMIT_LABEL _print_nibble
-    cmp     al, 9
-    jg      .letter
-    add     al, '0'
-    jmp     .have_ascii
+print_hex32:
+    pushad
+    mov ebx, eax
+
+    mov ecx, ebx
+    shr ecx, 28
+    mov al, cl
+    call _print_nibble
+
+    mov ecx, ebx
+    shr ecx, 24
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
+
+    mov ecx, ebx
+    shr ecx, 20
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
+
+    mov ecx, ebx
+    shr ecx, 16
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
+
+    mov ecx, ebx
+    shr ecx, 12
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
+
+    mov ecx, ebx
+    shr ecx, 8
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
+
+    mov ecx, ebx
+    shr ecx, 4
+    and ecx, 0xF
+    mov al, cl
+    call _print_nibble
+
+    mov al, bl
+    and al, 0xF
+    call _print_nibble
+
+    popad
+    ret
+
+_print_nibble:
+    cmp al, 9
+    jg .letter
+    add al,'0'
+    jmp .have_ascii
 .letter:
-    add     al, 'A' - 10
+    add al,'A'- 10
 .have_ascii:
-    call    print_char
+    call print_char
     ret
+
+; IN esi -> pointer
+;    eax -> size
+;    ecx -> granuality (1 = byte, 2 = word, 4 = dword)
+print_buffer:
+    pushad
+
+    movzx ebx, cl
+    xor edx, edx
+    mov ecx, ebx
+    div ecx
+    mov ecx, eax
+
+.print_loop:
+    test ecx, ecx
+    jz .print_done
+
+    cmp bl, 1
+    je .pb_print8
+    cmp bl, 2
+    je .pb_print16
+
+    mov eax, [esi]
+    call print_hex32
+    jmp .pb_after
+
+.pb_print16:
+    mov ax, [esi]
+    call print_hex16
+    jmp .pb_after
+
+.pb_print8:
+    mov al, [esi]
+    call print_hex8
+
+.pb_after:
+    mov al,' '
+    call print_char
+
+    add esi, ebx
+    dec ecx
+    jmp .print_loop
+
+.print_done:
+    call print_endl
+    popad
+    ret
+
 
 use16
-EMIT_LABEL print_char_rm
+print_char_rm:
     call serial_write_char_rm
 
     push ax
@@ -165,14 +213,14 @@ EMIT_LABEL print_char_rm
     pop ax
     ret
 
-EMIT_LABEL print_endl_rm
+print_endl_rm:
     mov al, 0x0D
     call print_char_rm
     mov al, 0x0A
     call print_char_rm
     ret
 
-EMIT_LABEL print_str_rm
+print_str_rm:
     push ax
 .next:
     lodsb
@@ -184,7 +232,7 @@ EMIT_LABEL print_str_rm
     pop ax
     ret
 
-EMIT_LABEL print_hex8_rm
+print_hex8_rm:
     push ax
     push bx
 
@@ -200,7 +248,7 @@ EMIT_LABEL print_hex8_rm
     pop ax
     ret
 
-EMIT_LABEL print_hex16_rm
+print_hex16_rm:
     push ax
     push cx
 
@@ -225,8 +273,8 @@ EMIT_LABEL print_hex16_rm
     pop ax
     ret
 
-EMIT_LABEL print_hex32_rm
-    ; DX:AX
+print_hex32_rm:
+; DX:AX
     push ax
     push dx
     push cx
@@ -270,13 +318,13 @@ EMIT_LABEL print_hex32_rm
     pop ax
     ret
 
-EMIT_LABEL _print_nibble_rm
+_print_nibble_rm:
     cmp al, 9
     jg .letter
-    add al, '0'
+    add al,'0'
     jmp .print
 .letter:
-    add al, 'A' - 10
+    add al,'A'- 10
 .print:
     call print_char_rm
     ret

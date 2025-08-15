@@ -1,35 +1,35 @@
 use32
 
-E820_MAX_ENTRIES equ 32
-E820_ENTRY_SIZE  equ 20
+    E820_MAX_ENTRIES equ 32
+    E820_ENTRY_SIZE equ 20
 
-E820_BASE_LOW    equ 0
-E820_BASE_HIGH   equ 4
-E820_LENGTH_LOW  equ 8
-E820_LENGTH_HIGH equ 12
-E820_TYPE        equ 16
-E820_ENTRY_SIZE  equ 20
+    E820_BASE_LOW equ 0
+    E820_BASE_HIGH equ 4
+    E820_LENGTH_LOW equ 8
+    E820_LENGTH_HIGH equ 12
+    E820_TYPE equ 16
+    E820_ENTRY_SIZE equ 20
 
 e820_map: rb E820_MAX_ENTRIES * E820_ENTRY_SIZE
 e820_entry_count: dd 0
 
 get_e820_map:
-	pusha
+    pushad
 
-	enter_real_mode
+    enter_real_mode
 
     mov di, e820_map
-	xor ebx, ebx
-	mov bp, E820_MAX_ENTRIES
+    xor ebx, ebx
+    mov bp, E820_MAX_ENTRIES
 
 .e820_loop:
-	xor ax, ax
+    xor ax, ax
     mov es, ax
-	mov eax, 0xE820
-	mov edx, 0x534D4150
-	mov ecx, E820_ENTRY_SIZE
-    
-	int 0x15
+    mov eax, 0xE820
+    mov edx, 0x534D4150
+    mov ecx, E820_ENTRY_SIZE
+
+    int 0x15
     jc .done_e820
     cmp eax, 0x534D4150
     jne .done_e820
@@ -52,7 +52,7 @@ get_e820_map:
     ret
 
 print_e820_map:
-    pusha
+    pushad
     xor ecx, ecx
     mov edi, e820_map
 
@@ -69,23 +69,23 @@ print_e820_map:
 
     mov esi, msg_base
     call print_str
-    mov eax, [edi + E820_BASE_HIGH]
+    mov eax, [edi+E820_BASE_HIGH]
     call print_hex32
-    mov eax, [edi + E820_BASE_LOW]
+    mov eax, [edi+E820_BASE_LOW]
     call print_hex32
     call print_endl
 
     mov esi, msg_size
     call print_str
-    mov eax, [edi + E820_LENGTH_HIGH]
+    mov eax, [edi+E820_LENGTH_HIGH]
     call print_hex32
-    mov eax, [edi + E820_LENGTH_LOW]
+    mov eax, [edi+E820_LENGTH_LOW]
     call print_hex32
     call print_endl
 
     mov esi, msg_type
     call print_str
-    mov eax, [edi + E820_TYPE]
+    mov eax, [edi+E820_TYPE]
     call print_hex32
     call print_endl
 

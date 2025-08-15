@@ -63,9 +63,9 @@ citecolor=magenta
 		
 	\begin{abstract}
 	Laomb is a bespoke operating system targeting a single legacy desktop computer equipped with an Intel Pentium MMX (p5) processor.  
-	Written in C and Assembly, and booted by a custom bootloader called Spark, it implements a fully preemptive kernel—including in-kernel preemption—using call-gate-based system calls and a ring-2 “driver” model to sandbox privileged extensions.  
+	Written in C and Assembly, and booted by a custom bootloader called Spark, it implements a fully preemptive kernel, including in-kernel preemption, using call-gate-based system calls and a ring-2 “driver” model to sandbox privileged extensions.  
 
-	Both the kernel and userland employ a custom executable format, internally referred to as \texttt{binfmt}, which is detailed in section~\ref{sec:binfmt}. A key architectural decision is the first-class use of segmentation—not as a deprecated relic inferior to paging, but as a complementary mechanism for enforcing privilege and memory isolation.
+	Both the kernel and userland employ a custom executable format, internally referred to as \texttt{binfmt}, which is detailed in section~\ref{sec:binfmt}. A key architectural decision is the first-class use of segmentation, not as a deprecated relic inferior to paging, but as a complementary mechanism for enforcing privilege and memory isolation.
 
 	This paper presents the chronological development of Laomb: from hardware targeting and bootstrapping, through kernel core subsystems and userland execution, to modular driver infrastructure and a DOS compatibility layer.
 	\end{abstract}
@@ -108,7 +108,7 @@ citecolor=magenta
 
 	\begin{itemize}
 		\item \textbf{Hardware specialization:} The kernel assumes a single-core 32-bit CPU without SSE or 3DNow, and omits support for USB, ACPI, or hotplugging.
-		\item \textbf{Software constraints:} All kernel and userspace code must fit within 64~MiB of RAM. Paging is enabled but kept minimal; segmentation is relied upon heavily.
+		\item \textbf{Software constraints:} All kernel and userspace code must fit within 64~MiB of RAM. Paging is enabled and used for memory protection; segmentation is relied upon heavily for NX regions.
 		\item \textbf{Subsystem trade-offs:}
 		\begin{itemize}
 			\item \textbf{Networking:} Only legacy 10 Mbps Ethernet via NE2000-compatible PCI NICs, with support for static IP, UDP, and TCP.
@@ -148,7 +148,7 @@ citecolor=magenta
 		\end{itemize}
 	\end{itemize}
 	
-	Since Laomb targets a single fixed CPU model, the kernel's assembly stubs were optimized for the Pentium MMX's microarchitecture—taking advantage of pipelined integer units and the on-die L2 cache. The integrated FPU/MMX unit simplifies floating-point or multimedia workloads, if any, inside userspace, as the kernel correctly handles lazy loading of a user thread's ability to use them.
+	Since Laomb targets a single fixed CPU model, the kernel's assembly stubs were optimized for the Pentium MMX's microarchitecture, taking advantage of pipelined integer units and the on-die L2 cache. The integrated FPU/MMX unit simplifies floating-point or multimedia workloads, if any, inside userspace, as the kernel correctly handles lazy loading of a user thread's ability to use them.
 	
 	\subsection{Memory: \SI{64}{\mebi\byte} DRAM}
 	\label{sec:memory}
@@ -544,7 +544,7 @@ citecolor=magenta
 		
 		\bibitem{intel_pentium_mmx_sdm}
 		Intel Corporation.  
-		\textit{Pentium Processor Family Developer's Manual: Volume 3—Architecture and Programming}.  
+		\textit{Pentium Processor Family Developer's Manual: Volume 3-Architecture and Programming}.  
 		1996.  
 		\url{ftp://download.intel.com/design/pentium/manuals/24142805.pdf}
 		
@@ -593,7 +593,7 @@ citecolor=magenta
 		\bibitem{kleiman_vnodes}
 		S. R. Kleiman.  
 		“Vnodes: An Architecture for Multiple File System Types in Sun UNIX.”  
-		\textit{Software—Practice \& Experience}, 17(7):727-761, Jul. 1987.  
+		\textit{Software-Practice \& Experience}, 17(7):727-761, Jul. 1987.  
 		\url{https://www.cs.fsu.edu/~awang/courses/cop5611_s2024/vnode.pdf}
 		
 		\bibitem{osdev_mbr}

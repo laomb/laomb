@@ -3,59 +3,84 @@ use16
 
 include 'macros.inc'
 
-EMIT_LABEL _start
-	mov ax, 0x0
-	mov ds, ax
-	mov es, ax
-	xor ax, ax
-	mov ss, ax
+_start:
+    mov ax, 0x0
+    mov ds, ax
+    mov es, ax
+    xor ax, ax
+    mov ss, ax
 
-	mov [boot_drive_number], dl
+    mov [boot_drive_number], dl
 
-	mov sp, 0x7C00
-	mov bp, sp
+    mov sp, 0x7C00
+    mov bp, sp
 
-	clsscr_rm
-	
-	cli
-	call bootstrap_enable_a20
-	call bootstrap_init_gdt
+    clsscr_rm
 
-	mov eax, cr0
-	or al, 1
-	mov cr0, eax
+    cli
+    call bootstrap_enable_a20
+    call bootstrap_init_gdt
 
-	jmp far GDT_SEL_CODE32:_protected_mode
-EMIT_LABEL _protected_mode
-	use32
+    mov eax, cr0
+    or al, 1
+    mov cr0, eax
 
-	mov ax, GDT_SEL_DATA32
-	mov ds, ax
-	mov es, ax
-	mov ss, ax
+    jmp far GDT_SEL_CODE32:_protected_mode
+_protected_mode:
+use32
 
-	call serial_init
+    mov ax, GDT_SEL_DATA32
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
 
-	mov esi, msg_drive
-	call print_str
-	mov al, [boot_drive_number]
-	call print_hex8
-	call print_endl
+    call serial_init
 
-	call get_e820_map
-	
-	call print_e820_map
+    mov esi, msg_drive
+    call print_str
+    mov al, [boot_drive_number]
+    call print_hex8
+    call print_endl
 
-	call check_drive_parameters
+    call get_e820_map
 
-	mov esi, msg_done
-	call print_str
+    call print_e820_map
 
-_halt:	hlt
-	jmp _halt
+    call check_disk_parameters
+    call print_disk_parameters
+    mov eax, 512
+    call allocate_memory
+    test eax, eax
+    jz .mem_alloc_failed
+    mov edi, eax
+
+    xor eax, eax
+    mov cx, 1
+    mov dl, [boot_drive_number]
+    call disk_read
+
+    mov esi, edi
+    mov eax, 512
+    mov ecx, 2
+    call print_buffer
+
+    jmp .after_read
+
+.mem_alloc_failed:
+    mov esi, msg_mem_alloc_failed
+    call print_str
+    call print_endl
+
+.after_read:
+    mov esi, msg_done
+    call print_str
+
+_halt: hlt
+    jmp _halt
 
 msg_drive: db 'Booted from drive 0x', 0
 msg_done: db 'Loading finalized!', 13, 10, 0
+msg_mem_alloc_failed: db 'Failed to allocate memory for boot sector', 0
 
 boot_drive_number: db 0
 
