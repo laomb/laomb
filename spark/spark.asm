@@ -1,7 +1,9 @@
 org 0x0500
 use16
 
-include 'macros.inc'
+include 'include/processor_mode_switch.inc'
+include 'include/gdt.inc'
+include 'include/visual.inc'
 
 _start:
     mov ax, 0x0
@@ -91,3 +93,4 @@ include 'source/print.asm'
 include 'source/bitmap.asm'
 include 'source/e820.asm'
 include 'source/disk.asm'
+include 'source/fs.asm'
