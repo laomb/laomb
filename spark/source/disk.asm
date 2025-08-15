@@ -297,12 +297,12 @@ disk_read:
 
 .done_ok:
     popad
-    xor eax, eax
+    clc
     ret
 
 .error_common:
     popad
-    mov eax, 1
+    stc
     ret
 
 ; in dl -> drive#
@@ -382,12 +382,12 @@ disk_write:
 
 .done_ok:
     popad
-    xor eax, eax
+    clc
     ret
 
 .error_common:
     popad
-    mov eax, 1
+    stc
     ret
 
 msg_failed_to_get_drive_parameters: db 'Failed to get drive parameters!', 13, 10, 0
