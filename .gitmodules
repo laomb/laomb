@@ -1,7 +1,3 @@
-[submodule "docs/bios-re"]
-	path = docs/bios-re
-	url = https://github.com/laomb/laomb-bios-re
-	branch = master
 [submodule "tools/adbg"]
 	path = tools/adbg
 	url = https://github.com/laomb/adbg

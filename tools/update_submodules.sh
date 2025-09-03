@@ -6,9 +6,9 @@ if [ "$(basename "$PWD")" = "tools" ]; then
 fi
 
 git submodule sync --recursive
-git submodule update --init --remote --merge tools/adbg docs/bios-re
-if ! git diff --quiet -- tools/adbg docs/bios-re; then
-  git add tools/adbg docs/bios-re
+git submodule update --init --remote --merge tools/adbg
+if ! git diff --quiet -- tools/adbg; then
+  git add tools/adbg
   git commit -m "chore: bump submodules to latest master"
   git push
 else
