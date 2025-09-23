@@ -1,28 +1,10 @@
 use32
 
-    DISK_CYLINDER_COUNT equ 0
-    DISK_HEAD_COUNT equ 2
-    DISK_SECTORS_PER_TRACK equ 3
-    DISK_DRIVE_NUMBER equ 4
+include 'include/disk_structs.inc'
 
-    DISK_EDD_SIZE equ 6
-    DISK_EDD_FLAGS equ 8
-    DISK_EDD_PHY_CYLS equ 10
-    DISK_EDD_PHY_HEADS equ 14
-    DISK_EDD_PHY_SPT equ 18
-    DISK_EDD_TOTAL_SECS equ 22
-    DISK_EDD_BPS equ 30
+    drive_geometry drive_geometry_t
 
-drive_geometry:
-    times 4 dq 0
-
-edd_packet:
-    db 0x10 ; packet size = 16
-    db 0 ; reserved
-    dw 0 ; # of sectors to transfer
-    dw 0 ; buffer offset (filled by wrapper)
-    dw 0 ; buffer segment
-    dq 0 ; starting LBA
+    edd_packet edd_packet_t
 
 check_disk_parameters:
     pushad
@@ -37,11 +19,11 @@ check_disk_parameters:
     int 0x13
     jc .err_fail
 
-    mov [drive_geometry+DISK_DRIVE_NUMBER], bl
+    mov [drive_geometry.disk_drive_number], bl
 
     mov al, cl
     and al, 0x3F
-    mov [drive_geometry+DISK_SECTORS_PER_TRACK], al
+    mov [drive_geometry.sectors_per_track], al
 
     mov ah, cl
     and ah, 0xC0
@@ -49,13 +31,13 @@ check_disk_parameters:
     mov al, ch
     or ax, ax
     inc ax
-    mov [drive_geometry+DISK_CYLINDER_COUNT], ax
+    mov [drive_geometry.cylinder_count], ax
 
     mov al, dh
     inc al
-    mov [drive_geometry+DISK_HEAD_COUNT], al
+    mov [drive_geometry.head_count], al
 
-    mov word [drive_geometry+DISK_EDD_SIZE], 0
+    mov word [drive_geometry.edd_size], 0
 
     mov ah, 0x41
     mov bx, 0x55AA
@@ -65,8 +47,8 @@ check_disk_parameters:
     cmp bx, 0x0AA55
     jne .skip_edd
 
-    mov word [drive_geometry+DISK_EDD_SIZE], 0x1E
-    lea si, [drive_geometry+DISK_EDD_SIZE]
+    mov word [drive_geometry.edd_size], 0x1E
+    lea si, [drive_geometry.edd_size]
     xor ax, ax
     mov ds, ax
     mov ah, 0x48
@@ -77,7 +59,7 @@ check_disk_parameters:
     jmp .done_probe
 
 .bad_edd:
-    mov word [drive_geometry+DISK_EDD_SIZE], 0
+    mov word [drive_geometry.edd_size], 0
 
 .skip_edd:
 .done_probe:
@@ -95,23 +77,22 @@ check_disk_parameters:
 
 print_disk_parameters:
     pushad
-    mov edi, drive_geometry
 
     mov esi, msg_sector_count_print
     call print_str
-    mov al, [edi+DISK_SECTORS_PER_TRACK]
+    mov al, [drive_geometry.sectors_per_track]
     call print_hex8
     call print_endl
 
     mov esi, msg_cylinder_count_print
     call print_str
-    mov ax, [edi+DISK_CYLINDER_COUNT]
+    mov ax, [drive_geometry.cylinder_count]
     call print_hex16
     call print_endl
 
     mov esi, msg_head_count_print
     call print_str
-    mov al, [edi+DISK_HEAD_COUNT]
+    mov al, [drive_geometry.head_count]
     call print_hex8
     call print_endl
 
@@ -123,21 +104,21 @@ print_disk_parameters:
     call print_str
     call print_endl
 
-    mov ax, [edi+DISK_EDD_SIZE]
+    mov ax, [drive_geometry.edd_size]
     cmp ax, 0
     je .no_edd
 
     mov esi, msg_total_sectors_print
     call print_str
-    mov eax, [edi+DISK_EDD_TOTAL_SECS]
+    mov eax, dword [drive_geometry.edd_total_secs]
     call print_hex32
-    mov eax, [edi+DISK_EDD_TOTAL_SECS+4]
+    mov eax, dword [drive_geometry.edd_total_secs+4]
     call print_hex32
     call print_endl
 
     mov esi, msg_bytes_per_sector_print
     call print_str
-    mov ax, [edi+DISK_EDD_BPS]
+    mov ax, [drive_geometry.edd_bps]
     call print_hex16
     call print_endl
     jmp .done
@@ -149,7 +130,7 @@ print_disk_parameters:
     jmp .done
 
 .print_floppy:
-    mov al, [edi+DISK_DRIVE_NUMBER]
+    mov al, [drive_geometry.disk_drive_number]
     cmp al, 1 ;   360 K
     je .flop360
     cmp al, 2 ;   1.2 M
@@ -191,7 +172,7 @@ print_disk_parameters:
     popad
     ret
 
-; in EAX -> lba
+; in eax -> lba
 ; out dh -> heads
 ;	  cx [0:5] -> sector
 ;     cx [6:15] -> track
@@ -200,14 +181,14 @@ lba_to_chs:
     push esi
 
     xor edx, edx
-    movzx esi, byte [drive_geometry+DISK_SECTORS_PER_TRACK]
+    movzx esi, byte [drive_geometry.sectors_per_track]
     div esi
 
     inc dx
     mov cx, dx
 
     xor edx, edx
-    movzx esi, byte [drive_geometry+DISK_HEAD_COUNT]
+    movzx esi, byte [drive_geometry.head_count]
     div esi
 
     mov dh, dl
@@ -220,30 +201,29 @@ lba_to_chs:
     ret
 
 
-; in dl -> drive#
-;    eax -> lba
+; in eax -> lba
 ;    cx  -> sector count
 ;    edi -> buffer
 disk_read:
     pushad
 
+    mov dl, [boot_drive_number]
     cmp dl, 0x80
     jb .floppy_read
 
-    lea si, [edd_packet]
-    mov byte [si+0], 0x10
-    mov byte [si+1], 0
-    mov word [si+2], cx
-    mov dword [si+8], eax
-    mov dword [si+12], 0
+    mov byte [edd_packet.size], 0x10
+    mov byte [edd_packet.reserved], 0
+    mov word [edd_packet.sector_count], cx
+    mov dword [edd_packet.lba], eax
 
     mov ebx, edi
     shr ebx, 4
-    mov word [si+6], bx
+    mov word [edd_packet.buffer_segment], bx
 
     mov ebx, edi
     and ebx, 0x0F
-    mov word [si+4], bx
+    mov word [edd_packet.buffer_offset], bx
+    lea si, [edd_packet]
 
     enter_real_mode
     mov ah, 0x42
@@ -305,30 +285,29 @@ disk_read:
     stc
     ret
 
-; in dl -> drive#
-;    eax -> lba
+; in eax -> lba
 ;    cx  -> sector count
 ;    edi -> buffer
 disk_write:
     pushad
 
+    mov dl, [boot_drive_number]
     cmp dl, 0x80
     jb .floppy_write
 
-    lea si, [edd_packet]
-    mov byte [si+0], 0x10
-    mov byte [si+1], 0
-    mov word [si+2], cx
-    mov dword [si+8], eax
-    mov dword [si+12], 0
+    mov byte [edd_packet.size], 0x10
+    mov byte [edd_packet.reserved], 0
+    mov word [edd_packet.sector_count], cx
+    mov dword [edd_packet.lba], eax
 
     mov ebx, edi
     shr ebx, 4
-    mov word [si+6], bx
+    mov word [edd_packet.buffer_segment], bx
 
     mov ebx, edi
     and ebx, 0x0F
-    mov word [si+4], bx
+    mov word [edd_packet.buffer_offset], bx
+    lea si, [edd_packet]
 
     enter_real_mode
     mov ah, 0x43
