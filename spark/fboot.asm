@@ -23,7 +23,7 @@ bdb_heads: dw 2
 bdb_hidden_sectors: dd 0
 bdb_large_sector_count: dd 0
 
-ebr_drive_number: dw 0
+ebr_drive_number: db 0
 ebr_signature: db 0x29
 ebr_volume_id: db 12h, 34h, 56h, 78h
 ebr_volume_label: db 'LAOMB OS'
