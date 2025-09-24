@@ -20,6 +20,7 @@ floppy:
 
 	@dd if=$(BUILD_DIR)/fboot.bin of=$(BUILD_DIR)/a.img bs=1 count=512 conv=notrunc
 
+	@mcopy -i $(BUILD_DIR)/a.img test.txt ::TEST.TXT
 	@mcopy -i $(BUILD_DIR)/a.img $(BUILD_DIR)/spark.hex ::SPARK.HEX
 	#@mcopy -i $(BUILD_DIR)/a.img $(BUILD_DIR)/kernel.bin ::
 

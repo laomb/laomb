@@ -8,35 +8,39 @@ use32
     bitmap : times BITMAP_SIZE db 0
 next_free_chunk: dd 0
 
-; in eax -> size (32 byte rounded) 
-; out eax -> pointer
+; in EAX -> size (32 byte rounded) 
+; out EAX -> pointer
 allocate_memory:
     push ebx
     push ecx
     push edx
+    push esi
+    push edi
 
     mov ecx, eax
     add eax, CHUNK_SIZE - 1
     xor edx, edx
-    push ecx
-    mov ecx, CHUNK_SIZE
-    div ecx
-    pop ecx
+    
+    mov ebx, CHUNK_SIZE
+    div ebx
 
     mov ebx, eax
-    mov ecx, [next_free_chunk]
+    mov esi, [next_free_chunk]
 
-    mov edx, ecx
+    mov edx, esi
     add edx, ebx
     cmp edx, MAX_CHUNKS
     ja .fail
 
 .mark_loop:
-    mov edi, ecx
-    shr edi, 3
-    and ecx, 7
-    bts [bitmap+edi], ecx
-    inc ecx
+    mov edi, esi
+    mov eax, edi
+
+    shr edi, 5
+    and eax, 31
+    bts dword [bitmap + edi*4], eax
+
+    inc esi
     dec ebx
     jnz .mark_loop
 
@@ -44,7 +48,10 @@ allocate_memory:
     imul eax, CHUNK_SIZE
     add eax, MEMORY_TRACK_BASE
 
-    mov [next_free_chunk], ecx
+    mov [next_free_chunk], esi
+
+    pop edi
+    pop esi
     pop edx
     pop ecx
     pop ebx
@@ -52,6 +59,9 @@ allocate_memory:
 
 .fail:
     xor eax, eax
+
+    pop edi
+    pop esi
     pop edx
     pop ecx
     pop ebx

@@ -147,7 +147,7 @@ _print_nibble:
     call print_char
     ret
 
-; IN esi -> pointer
+; in esi -> pointer
 ;    eax -> size
 ;    ecx -> granuality (1 = byte, 2 = word, 4 = dword)
 print_buffer:
@@ -274,7 +274,7 @@ print_hex16_rm:
     ret
 
 print_hex32_rm:
-; DX:AX
+; dx:ax
     push ax
     push dx
     push cx
