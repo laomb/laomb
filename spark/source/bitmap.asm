@@ -1,11 +1,11 @@
 use32
 
-    MEMORY_TRACK_BASE equ 0x7e00
-    CHUNK_SIZE equ 32
-    BITMAP_SIZE equ 255
-    MAX_CHUNKS equ BITMAP_SIZE * 8
+MEMORY_TRACK_BASE = 0x7e00
+CHUNK_SIZE = 32
+BITMAP_SIZE = 255
+MAX_CHUNKS = BITMAP_SIZE * 8
 
-    bitmap : times BITMAP_SIZE db 0
+bitmap: times bitmap_size db 0
 next_free_chunk: dd 0
 
 ; in EAX -> size (32 byte rounded) 
@@ -20,7 +20,7 @@ allocate_memory:
     mov ecx, eax
     add eax, CHUNK_SIZE - 1
     xor edx, edx
-    
+
     mov ebx, CHUNK_SIZE
     div ebx
 
@@ -38,7 +38,7 @@ allocate_memory:
 
     shr edi, 5
     and eax, 31
-    bts dword [bitmap + edi*4], eax
+    bts dword [bitmap+edi*4], eax
 
     inc esi
     dec ebx
