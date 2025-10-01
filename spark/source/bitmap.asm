@@ -5,7 +5,7 @@ CHUNK_SIZE = 32
 BITMAP_SIZE = 255
 MAX_CHUNKS = BITMAP_SIZE * 8
 
-bitmap: times bitmap_size db 0
+bitmap: times BITMAP_SIZE db 0
 next_free_chunk: dd 0
 
 ; in EAX -> size (32 byte rounded) 
