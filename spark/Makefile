@@ -14,7 +14,7 @@ ASM := fasm
 all: $(FBOOT_BIN) $(SPARK_BIN)
 
 $(BUILD_DIR):
-	@mkdir -p $@ -s $(FBOOT_FAS)
+	@mkdir -p $@
 
 $(FBOOT_BIN): $(FBOOT_SRC) | $(BUILD_DIR)
 	@$(ASM) $< $@
@@ -23,6 +23,6 @@ $(SPARK_BIN): $(SPARK_SRC) | $(BUILD_DIR)
 	@$(ASM) $< $@ -s $(SPARK_FAS)
 
 clean:
-	@rm -rf $(FBOOT_BIN) $(SPARK_BIN) $(SPARK_FAS)
+	@rm -rf $(FBOOT_BIN) $(SPARK_BIN) $(FBOOT_FAS) $(SPARK_FAS)
 
 .PHONY: all clean

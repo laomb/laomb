@@ -42,8 +42,8 @@ QEMU_COMMON_FLAGS := -m 64M -cpu pentium-v1,mmx=on,fpu=on \
 		-netdev user,id=net0,hostfwd=tcp::2222-:22 \
 		--no-reboot --no-shutdown \
 		-serial stdio \
-		-d int \
-		-M smm=off \
+		-d int,guest_errors \
+		-M accel=tcg,smm=off \
 		-D $(BUILD_DIR)/qemu_interrupt.log
 
 run-floppy:
