@@ -94,7 +94,7 @@ main:
     jmp kernel_not_found_error
 
 .found_spark:
-    mov ax, [di+26]
+    mov ax, [di + 26]
     mov [curr_cluster], ax
     mov ax, [bdb_reserved_sectors]
     mov bx, buffer

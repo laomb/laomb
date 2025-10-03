@@ -1,5 +1,11 @@
 use32
 
+print_serial_mirror_enabled: db 1
+
+print_set_serial_mirror:
+    mov [print_serial_mirror_enabled], al
+    ret
+
 print_char:
     pushad
 
@@ -19,7 +25,10 @@ print_char:
     enter_protected_mode
     pop eax
 
+    cmp byte [print_serial_mirror_enabled], 0
+    je .skip_serial_pm
     call serial_write_char
+.skip_serial_pm:
 
     popad
     ret
@@ -139,10 +148,10 @@ print_hex32:
 _print_nibble:
     cmp al, 9
     jg .letter
-    add al,'0'
+    add al, '0'
     jmp .have_ascii
 .letter:
-    add al,'A'- 10
+    add al, 'A'- 10
 .have_ascii:
     call print_char
     ret
@@ -182,7 +191,7 @@ print_buffer:
     call print_hex8
 
 .pb_after:
-    mov al,' '
+    mov al, ' '
     call print_char
 
     add esi, ebx
@@ -197,7 +206,10 @@ print_buffer:
 
 use16
 print_char_rm:
+    cmp byte [print_serial_mirror_enabled], 0
+    je .no_serial_rm
     call serial_write_char_rm
+.no_serial_rm:
 
     push ax
     push bx
@@ -321,10 +333,10 @@ print_hex32_rm:
 _print_nibble_rm:
     cmp al, 9
     jg .letter
-    add al,'0'
+    add al, '0'
     jmp .print
 .letter:
-    add al,'A'- 10
+    add al, 'A'- 10
 .print:
     call print_char_rm
     ret

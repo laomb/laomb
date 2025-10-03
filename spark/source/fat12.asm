@@ -28,14 +28,14 @@ fat12_initialize:
     mov dword [root_dir_ptr], eax
     mov edi, eax
 
-    mov dword [edi+FILE_POS_OFF], 0
+    mov dword [edi + FILE_POS_OFF], 0
 
     movzx eax, word [bdb_dir_entries_count]
     mov ecx, FAT_DIR_ENTRY_SIZE
     mul ecx
-    mov dword [edi+FILE_SIZE_OFF], eax
+    mov dword [edi + FILE_SIZE_OFF], eax
 
-    mov byte [edi+FILE_DIR_OFF], 1
+    mov byte [edi + FILE_DIR_OFF], 1
 
     movzx eax, word [bdb_sectors_per_fat]
     movzx ecx, word [bdb_fat_count]
@@ -43,17 +43,17 @@ fat12_initialize:
     movzx esi, word [bdb_reserved_sectors]
     add eax, esi
 
-    mov dword [edi+FILE_CURRENT_CLUSTER_OFF], eax ; for the root dir, this doesn't hold the cluster# but lba
-    mov dword [edi+FILE_FIRST_CLUSTER_OFF], eax
-    mov dword [edi+FILE_SECTOR_IN_CLUSTER_OFF], 0
+    mov dword [edi + FILE_CURRENT_CLUSTER_OFF], eax ; for the root dir, this doesn't hold the cluster# but lba
+    mov dword [edi + FILE_FIRST_CLUSTER_OFF], eax
+    mov dword [edi + FILE_SECTOR_IN_CLUSTER_OFF], 0
 
-    lea edi, [edi+FILE_BUFFER_OFF]
+    lea edi, [edi + FILE_BUFFER_OFF]
     mov cx, 1
     call partition_read
 
     mov edi, dword [root_dir_ptr]
 
-    mov eax, dword [edi+FILE_SIZE_OFF]
+    mov eax, dword [edi + FILE_SIZE_OFF]
 
     movzx ecx, word [bdb_bytes_per_sector]
     add eax, ecx
@@ -63,7 +63,7 @@ fat12_initialize:
     xor edx, edx
     div ecx
 
-    add eax, dword [edi+FILE_CURRENT_CLUSTER_OFF]
+    add eax, dword [edi + FILE_CURRENT_CLUSTER_OFF]
 
     mov dword [data_section_lba], eax
 
@@ -92,36 +92,36 @@ fat_open_entry:
 
     mov esi, eax
 
-    mov eax, dword [edi+FAT_SIZE_OFF]
-    mov dword [esi+FILE_SIZE_OFF], eax
+    mov eax, dword [edi + FAT_SIZE_OFF]
+    mov dword [esi + FILE_SIZE_OFF], eax
 
-    mov al, [edi+FAT_ATTRIBUTES_OFF]
+    mov al, [edi + FAT_ATTRIBUTES_OFF]
     test al, FAT_ATTRIBUTE_DIRECTORY
     setnz al
-    mov [esi+FILE_DIR_OFF], al
+    mov [esi + FILE_DIR_OFF], al
 
-    mov dword [esi+FILE_POS_OFF], 0
+    mov dword [esi + FILE_POS_OFF], 0
 
-    movzx eax, word [edi+FAT_FIRST_CLUSTER_LO_OFF]
-    movzx ecx, word [edi+FAT_FIRST_CLUSTER_HI_OFF]
+    movzx eax, word [edi + FAT_FIRST_CLUSTER_LO_OFF]
+    movzx ecx, word [edi + FAT_FIRST_CLUSTER_HI_OFF]
     shl ecx, 16
     or eax, ecx
 
-    mov dword [esi+FILE_FIRST_CLUSTER_OFF], eax
-    mov dword [esi+FILE_CURRENT_CLUSTER_OFF], eax
+    mov dword [esi + FILE_FIRST_CLUSTER_OFF], eax
+    mov dword [esi + FILE_CURRENT_CLUSTER_OFF], eax
 
-    mov dword [esi+FILE_SECTOR_IN_CLUSTER_OFF], 0
+    mov dword [esi + FILE_SECTOR_IN_CLUSTER_OFF], 0
 
-    cmp dword [esi+FILE_SIZE_OFF], 0
+    cmp dword [esi + FILE_SIZE_OFF], 0
     jne .load_first_sector
 
-    mov dword [esi+FILE_CURRENT_CLUSTER_OFF], 0xFFF
+    mov dword [esi + FILE_CURRENT_CLUSTER_OFF], 0xFFF
     jmp .done_open
 
 .load_first_sector:
     call fat12_cluster_to_lba
 
-    lea edi, [esi+FILE_BUFFER_OFF]
+    lea edi, [esi + FILE_BUFFER_OFF]
     mov cx, 1
     call partition_read
 
@@ -140,8 +140,8 @@ fat_next_cluster:
 
     mov ecx, eax
     shr ecx, 1
-    lea eax, [eax+ecx]
-    lea eax, [eax+esi]
+    lea eax, [eax + ecx]
+    lea eax, [eax + esi]
     movzx eax, word [eax]
 
     jnc .even ; flag still set based on shr
@@ -163,12 +163,12 @@ fat_next_cluster:
 fat_read:
     pushad
 
-    mov al, byte [esi+FILE_DIR_OFF]
+    mov al, byte [esi + FILE_DIR_OFF]
     test al, al
     jnz .is_dir
 
-    mov eax, [esi+FILE_SIZE_OFF]
-    sub eax, [esi+FILE_POS_OFF]
+    mov eax, [esi + FILE_SIZE_OFF]
+    sub eax, [esi + FILE_POS_OFF]
     cmp ecx, eax
     jbe .after_min
 
@@ -179,11 +179,11 @@ fat_read:
     push edi ; [esp + 4]
     push ecx ; [esp]
 .loop:
-    mov esi, [esp+8]
-    mov edi, [esp+4]
+    mov esi, [esp + 8]
+    mov edi, [esp + 4]
     mov ecx, [esp]
 
-    mov eax, [esi+FILE_POS_OFF]
+    mov eax, [esi + FILE_POS_OFF]
 
     movzx ebx, word [bdb_bytes_per_sector]
     dec ebx
@@ -200,16 +200,16 @@ fat_read:
 
     push ecx
 
-    lea esi, [esi+FILE_BUFFER_OFF]
+    lea esi, [esi + FILE_BUFFER_OFF]
     add esi, eax ; esi = buffer + eax
     rep movsb
 
     pop ecx
 
-    mov esi, [esp+8]
+    mov esi, [esp + 8]
 
-    add [esp+4], ecx
-    add [esi+FILE_POS_OFF], ecx
+    add [esp + 4], ecx
+    add [esi + FILE_POS_OFF], ecx
     sub [esp], ecx
 
     cmp ecx, ebx
@@ -219,52 +219,52 @@ fat_read:
     cmp edx, esi
     jne .not_root_dir
 
-    inc dword [esi+FILE_CURRENT_CLUSTER_OFF]
-    mov eax, dword [esi+FILE_CURRENT_CLUSTER_OFF]
+    inc dword [esi + FILE_CURRENT_CLUSTER_OFF]
+    mov eax, dword [esi + FILE_CURRENT_CLUSTER_OFF]
     mov cx, 1
-    lea edi, [esi+FILE_BUFFER_OFF]
+    lea edi, [esi + FILE_BUFFER_OFF]
     call partition_read
 
     jmp .no_more
 
 .not_root_dir:
-    mov eax, dword [esi+FILE_SECTOR_IN_CLUSTER_OFF]
+    mov eax, dword [esi + FILE_SECTOR_IN_CLUSTER_OFF]
     inc eax
     movzx ebx, byte [bdb_sectors_per_cluster]
 
     cmp eax, ebx
     jb .not_next_cluster
 
-    mov dword [esi+FILE_SECTOR_IN_CLUSTER_OFF], 0
+    mov dword [esi + FILE_SECTOR_IN_CLUSTER_OFF], 0
 
-    mov eax, dword [esi+FILE_CURRENT_CLUSTER_OFF]
+    mov eax, dword [esi + FILE_CURRENT_CLUSTER_OFF]
     call fat_next_cluster
-    mov dword [esi+FILE_CURRENT_CLUSTER_OFF], eax
+    mov dword [esi + FILE_CURRENT_CLUSTER_OFF], eax
 
     jmp .after_sector_advance
 .not_next_cluster:
-    mov [esi+FILE_SECTOR_IN_CLUSTER_OFF], eax
+    mov [esi + FILE_SECTOR_IN_CLUSTER_OFF], eax
 
 .after_sector_advance:
-    mov eax, dword [esi+FILE_CURRENT_CLUSTER_OFF]
+    mov eax, dword [esi + FILE_CURRENT_CLUSTER_OFF]
     cmp eax, 0xFF7
     je filesystem_corrupt
 
     cmp eax, 0xFF8
     jnae .not_end_of_chain
 
-    mov eax, dword [esi+FILE_POS_OFF]
-    mov dword [esi+FILE_SIZE_OFF], eax
+    mov eax, dword [esi + FILE_POS_OFF]
+    mov dword [esi + FILE_SIZE_OFF], eax
     mov dword [esp], 0
     jmp .no_more
 
 .not_end_of_chain:
-    lea edi, [esi+FILE_BUFFER_OFF]
+    lea edi, [esi + FILE_BUFFER_OFF]
     mov cx, 1
 
-    mov eax, [esi+FILE_CURRENT_CLUSTER_OFF]
+    mov eax, [esi + FILE_CURRENT_CLUSTER_OFF]
     call fat12_cluster_to_lba
-    add eax, [esi+FILE_SECTOR_IN_CLUSTER_OFF]
+    add eax, [esi + FILE_SECTOR_IN_CLUSTER_OFF]
 
     call partition_read
 
@@ -274,9 +274,9 @@ fat_read:
     jg .loop
 
 .end:
-    mov eax, [esp+36]
+    mov eax, [esp + 36]
     sub eax, [esp]
-    mov [esp+40], eax
+    mov [esp + 40], eax
 
     pop ecx
     pop edi
@@ -322,34 +322,34 @@ fat_find_file:
     call fat_read_entry
     jc .fail
 
-    mov al, byte [edi+FAT_NAME_OFF]
+    mov al, byte [edi + FAT_NAME_OFF]
     cmp al, 0
     je .fail
 
     cmp al, 0xE5
     je .search_entries_loop
 
-    mov al, byte [edi+FAT_ATTRIBUTES_OFF]
+    mov al, byte [edi + FAT_ATTRIBUTES_OFF]
     and al, FAT_ATTRIBUTE_LFN_MASK
     cmp al, FAT_ATTRIBUTE_LFN_MASK
     je .search_entries_loop
 
-    mov al, byte [edi+FAT_ATTRIBUTES_OFF]
+    mov al, byte [edi + FAT_ATTRIBUTES_OFF]
     test al, FAT_ATTRIBUTE_VOLUME_ID
     jnz .search_entries_loop
 
     mov ecx, 11
 .compare_8_3_name:
-    mov al, [edx+ecx-1]
+    mov al, [edx + ecx - 1]
 
-    cmp al, [edi+FAT_NAME_OFF+ecx-1]
+    cmp al, [edi + FAT_NAME_OFF + ecx - 1]
     jne .search_entries_loop
 
     dec ecx
     jnz .compare_8_3_name
 
     call fat_open_entry
-    mov [esp+28], eax
+    mov [esp + 28], eax
 
     popad
     clc
@@ -373,6 +373,6 @@ filesystem_corrupt:
     int 0x19
 
 use32
-msg_filesystem_corrupt: db 'BAD Sector in FAT Chain!', 13, 10
-    db 'Filesystem is corrupted, reboot from a recovery media and run chkfs.', 13, 10
-    db 'Press any key to enter firmware setup', 13, 10, 0
+msg_filesystem_corrupt: db 'BAD Sector in FAT Chain!', endl
+    db 'Filesystem is corrupted, reboot from a recovery media and run chkfs.', endl
+    db 'Press any key to enter firmware setup', endl, 0

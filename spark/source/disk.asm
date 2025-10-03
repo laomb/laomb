@@ -112,7 +112,7 @@ print_disk_parameters:
     call print_str
     mov eax, dword [drive_geometry.edd_total_secs]
     call print_hex32
-    mov eax, dword [drive_geometry.edd_total_secs+4]
+    mov eax, dword [drive_geometry.edd_total_secs + 4]
     call print_hex32
     call print_endl
 
@@ -369,7 +369,7 @@ disk_write:
     stc
     ret
 
-msg_failed_to_get_drive_parameters: db 'Failed to get drive parameters!', 13, 10, 0
+msg_failed_to_get_drive_parameters: db 'Failed to get drive parameters!', endl, 0
 
 msg_sector_count_print: db 'Sectors/track: 0x', 0
 msg_cylinder_count_print: db 'Cylinders: 0x', 0

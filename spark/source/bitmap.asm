@@ -38,7 +38,7 @@ allocate_memory:
 
     shr edi, 5
     and eax, 31
-    bts dword [bitmap+edi*4], eax
+    bts dword [bitmap + edi * 4], eax
 
     inc esi
     dec ebx

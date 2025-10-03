@@ -69,23 +69,23 @@ print_e820_map:
 
     mov esi, msg_base
     call print_str
-    mov eax, [edi+E820_BASE_HIGH]
+    mov eax, [edi + E820_BASE_HIGH]
     call print_hex32
-    mov eax, [edi+E820_BASE_LOW]
+    mov eax, [edi + E820_BASE_LOW]
     call print_hex32
     call print_endl
 
     mov esi, msg_size
     call print_str
-    mov eax, [edi+E820_LENGTH_HIGH]
+    mov eax, [edi + E820_LENGTH_HIGH]
     call print_hex32
-    mov eax, [edi+E820_LENGTH_LOW]
+    mov eax, [edi + E820_LENGTH_LOW]
     call print_hex32
     call print_endl
 
     mov esi, msg_type
     call print_str
-    mov eax, [edi+E820_TYPE]
+    mov eax, [edi + E820_TYPE]
     call print_hex32
     call print_endl
 

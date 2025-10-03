@@ -1,19 +1,19 @@
 use32
 
-    COM1_BASE equ 0x3F8
+COM1_BASE = 0x3F8
 
-    REG_DATA equ 0
-    REG_IER equ 1
-    REG_FCR equ 2
-    REG_LCR equ 3
-    REG_MCR equ 4
-    REG_LSR equ 5
+REG_DATA = 0
+REG_IER = 1
+REG_FCR = 2
+REG_LCR = 3
+REG_MCR = 4
+REG_LSR = 5
 
-    LCR_DLAB equ 0x80
-    LCR_8N1 equ 0x03
-    FCR_ENABLE_FIFO equ 0xC7
-    MCR_DTR_RTS_OUT2 equ 0x0B
-    LSR_THRE equ 0x20
+LCR_DLAB = 0x80
+LCR_8N1 = 0x03
+FCR_ENABLE_FIFO = 0xC7
+MCR_DTR_RTS_OUT2 = 0x0B
+LSR_THRE = 0x20
 
 serial_init:
 ; Disable interrupts
@@ -74,4 +74,49 @@ serial_write_char_rm:
     mov dx, COM1_BASE + REG_DATA
     pop ax
     out dx, al
+    ret
+
+use32
+serial_puts:
+    pushad
+    @@:
+    mov al, [esi]
+    test al, al
+    jz @f
+    call serial_write_char
+    inc esi
+    jmp @b
+    @@:
+    popad
+    ret
+
+serial_put_nib:
+    cmp al, 9
+    jbe .d
+    add al, 'A' - 10
+    jmp .o
+.d:
+    add al, '0'
+.o:
+    call serial_write_char
+    ret
+
+serial_put_hex8:
+    push eax
+    mov ah, al
+    shr al, 4
+    call serial_put_nib
+    mov al, ah
+    and al, 0x0F
+    call serial_put_nib
+    pop eax
+    ret
+
+serial_crlf:
+    push eax
+    mov al, 13
+    call serial_write_char
+    mov al, 10
+    call serial_write_char
+    pop eax
     ret
