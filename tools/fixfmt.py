@@ -133,7 +133,19 @@ def apply_outside_quotes(s: str, fn):
     return "".join(out)
 
 
-def compact_mem_brackets(s: str) -> str:
+def _format_mem_inner(inner: str) -> str:
+    inner = format_mem_brackets(inner)
+
+    inner = re.sub(r"\s*([+\-*])\s*", r" \1 ", inner)
+    inner = re.sub(r"\s*,\s*", ", ", inner)
+
+    inner = re.sub(r"\s*\(\s*", "(", inner)
+    inner = re.sub(r"\s*\)\s*", ")", inner)
+    inner = re.sub(r"\s+", " ", inner).strip()
+    return inner
+
+
+def format_mem_brackets(s: str) -> str:
     out = []
     i = 0
     in_sq = in_dq = False
@@ -162,7 +174,8 @@ def compact_mem_brackets(s: str) -> str:
                     break
                 buf.append(s[j])
                 j += 1
-            inner = re.sub(r"\s+", "", "".join(buf))
+            inner = "".join(buf)
+            inner = _format_mem_inner(inner)
             out.append("[" + inner + "]")
             i = j + 1
             continue
@@ -174,8 +187,8 @@ def compact_mem_brackets(s: str) -> str:
 def normalize_commas_ops_safe(s: str) -> str:
     def fn(t):
         t = re.sub(r"\s*,\s*", ", ", t)
-        t = re.sub(r"[ \t]+", " ", t)
-        return t.strip()
+        t = re.sub(r"(?<=\S)[ \t]+(?=\S)", " ", t)
+        return t
 
     return apply_outside_quotes(s, fn)
 
@@ -218,7 +231,7 @@ def format_instruction(mnemonic: str, rest: str) -> str:
     body = rest.strip()
     if not body:
         return m
-    body = compact_mem_brackets(body)
+    body = format_mem_brackets(body)
     body = lowercase_regs_safe(body)
     body = normalize_commas_ops_safe(body)
     return f"{m} {body}"
@@ -297,8 +310,13 @@ def normalize_line(code: str, comment: str, indent: int, ctx: Context) -> str:
         elif low_mnem in GEN_DIRS or low_mnem.startswith(
             ("if", "end", "else", "repeat", "rept", "irp", "irps", "iterate", "match")
         ):
-            inner = normalize_commas_ops_safe(mnemonic + rest2)
-            inner = inner if low_mnem in FLUSH_LEFT_ALWAYS else inner.lower()
+            tail = normalize_commas_ops_safe(rest2).lstrip()
+            if low_mnem == "include":
+                inner = ensure_include_space("include", tail)
+            elif low_mnem == "times":
+                inner = "times" + ((" " + tail) if tail else "")
+            else:
+                inner = mnemonic.lower() + ((" " + tail) if tail else "")
         else:
             inner = format_instruction(mnemonic, rest2)
         line = pad + f"{label} {inner}"
@@ -342,7 +360,7 @@ def normalize_line(code: str, comment: str, indent: int, ctx: Context) -> str:
     elif low_mnem in GEN_DIRS or low_mnem.startswith(
         ("if", "end", "else", "repeat", "rept", "irp", "irps", "iterate", "match")
     ):
-        tail = normalize_commas_ops_safe(rest)
+        tail = normalize_commas_ops_safe(rest).lstrip()
         if low_mnem == "include":
             built = ensure_include_space("include", tail)
             line = built if low_mnem in FLUSH_LEFT_ALWAYS else pad + built
