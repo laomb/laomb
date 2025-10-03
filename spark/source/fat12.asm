@@ -163,17 +163,12 @@ fat_next_cluster:
 fat_read:
     pushad
 
-    mov al, byte [esi + FILE_DIR_OFF]
-    test al, al
-    jnz .is_dir
-
     mov eax, [esi + FILE_SIZE_OFF]
     sub eax, [esi + FILE_POS_OFF]
     cmp ecx, eax
     jbe .after_min
 
     mov ecx, eax
-.is_dir:
 .after_min:
     push esi ; [esp + 8]
     push edi ; [esp + 4]
@@ -253,8 +248,6 @@ fat_read:
     cmp eax, 0xFF8
     jnae .not_end_of_chain
 
-    mov eax, dword [esi + FILE_POS_OFF]
-    mov dword [esi + FILE_SIZE_OFF], eax
     mov dword [esp], 0
     jmp .no_more
 

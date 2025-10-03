@@ -1,9 +1,17 @@
 macro enter_real_mode {
 use32
+    call bootstrap_disable_a20
     jmp GDT_SEL_CODE16:@f
 
 @@:
 use16
+    mov ax, GDT_SEL_DATA16
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
     mov eax, cr0
     and al, 0FEh
     mov cr0, eax
@@ -24,6 +32,7 @@ use16
 macro enter_protected_mode {
     cli
 
+    call bootstrap_enable_a20
     lgdt [gdt_descriptor]
 
     mov eax, cr0

@@ -36,11 +36,13 @@ _protected_mode:
     mov ds, ax
     mov es, ax
     mov ss, ax
+    mov esp, 0x7C00
 
     call serial_init
 
     mov esi, msg_drive
     call print_str
+
     mov al, [boot_drive_number]
     call print_hex8
     call print_endl
@@ -51,8 +53,11 @@ _protected_mode:
     call check_disk_parameters
     call print_disk_parameters
 
+    call fat12_initialize
+
 .done_test:
-    call tui_enter
+    jmp chainboot_msdos
+    ; call tui_enter
 
 _halt: hlt
     jmp _halt
@@ -66,20 +71,10 @@ boot_laomb:
 
     jmp _halt
 
-chainboot_msdos:
-    mov al, 1
-    call print_set_serial_mirror
-
-    mov esi, msg_chainload_msdos
-    call serial_puts
-
-    jmp _halt
-
 msg_drive: db 'Booted from drive 0x', 0
 boot_drive_number: db 0
 
 msg_boot_laomb: db 'Booting LAOMB', endl, 0
-msg_chainload_msdos: db 'Chainloading MS-DOS', endl, 0
 
 include 'source/gdt.asm'
 include 'source/a20.asm'
@@ -91,3 +86,4 @@ include 'source/disk.asm'
 include 'source/mbr.asm'
 include 'source/fat12.asm'
 include 'source/tui.asm'
+include 'source/msdos.asm'

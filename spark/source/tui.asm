@@ -116,10 +116,12 @@ tui_enter:
     jmp .launch_msdos
 
 .launch_laomb:
+    call tui_clear_screen
     call tui_cursor_show
     jmp boot_laomb
 
 .launch_msdos:
+    call tui_clear_screen
     call tui_cursor_show
     jmp chainboot_msdos
 
@@ -344,10 +346,8 @@ tui_get_key:
 
     enter_real_mode
 
-    sti
     xor ah, ah
     int 0x16
-    cli
 
     mov [esp], ax
     enter_protected_mode
