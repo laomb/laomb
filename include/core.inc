@@ -5,4 +5,3 @@ include 'core/times.inc'
 
 build.mode.Debug = 1
 build.mode.Release = 2
-

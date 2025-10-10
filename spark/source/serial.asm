@@ -1,5 +1,5 @@
 
-COM1_BASE = 0x3F8
+COM1_BASE = 0x3f8
 
 REG_DATA = 0
 REG_IER = 1

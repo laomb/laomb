@@ -2,19 +2,19 @@
 label stage2_base at 0x500
 
 label root_dir_buffer at 0x7e00
-label fat_buffer at 0x9A00
+label fat_buffer at 0x9a00
 
-label heap_base at 0xC000
-label heap_limit at 0xE800
+label heap_base at 0xc000
+label heap_limit at 0xe800
 heap_size = heap_limit - heap_base
 
-label vbe_info:512 at 0xE800
-label vbe_modeinfo:256 at 0xEA00
-label edid_buffer:256 at 0xEB00
-label bios_dap:16 at 0xEC00
-label sector_buf:512 at 0xED00
+label vbe_info:512 at 0xe800
+label vbe_modeinfo:256 at 0xea00
+label edid_buffer:256 at 0xeB00
+label bios_dap:16 at 0xec00
+label sector_buf:512 at 0xed00
 
-label e820_buffer:4096 at 0xF000
+label e820_buffer:4096 at 0xf000
 
 kernel_bounce_buffer_offset = 0x2000
 kernel_bounce_buffer_segment = 0x1000

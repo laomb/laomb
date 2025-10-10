@@ -578,4 +578,3 @@ macro __print_one a&
 		end if
 	end if
 end macro
-

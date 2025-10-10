@@ -7,7 +7,7 @@ bitmap_bytes = (total_blocks + 7) shr 3
 bitmap_blocks = (bitmap_bytes + block_size - 1) shr block_shift
 
 data_first_block = bitmap_blocks
-magic_word = 0x4D4D
+magic_word = 0x4d4d
 
 ; In: SI = block index
 ; Out: BX = offset to bitmap byte, CL = bit number (0..7), DL = bit mask
