@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 static void set_env(const char *k, const char *v) {
 	if (v && *v)
@@ -31,15 +32,31 @@ static int have_tool(const char *exe) {
 
 static layout_t L;
 
+static const char *normalize_mode(const char *in) {
+	if (!in || !*in)
+		return "Debug";
+
+	if (strcasecmp(in, "Debug") == 0)
+		return "Debug";
+
+	if (strcasecmp(in, "Release") == 0)
+		return "Release";
+
+	cb_log_warn("unknown BUILD_MODE='%s', defaulting to Debug", in);
+	return "Debug";
+}
+
 static void init_layout(void) {
 	const char *root = cb_workspace_root();
 	L.ROOT = cb_norm(root);
 	L.OUT = cb_norm(cb_out_root());
 	L.BUILD_DIR = cb_join(L.OUT, "build");
+	L.BUILD_MODE = normalize_mode(getenv("BUILD_MODE"));
 	L.SPARK_DIR = cb_join(L.ROOT, "spark");
 	L.IMG = cb_join(L.BUILD_DIR, "a.img");
-	L.FBOOT_BIN = cb_join(L.OUT, "fboot.bin");
-	L.SPARK_HEX = cb_join(L.OUT, "spark.hex");
+	L.FBOOT_BIN = cb_join(L.BUILD_DIR, "fboot.bin");
+	L.SPARK_HEX = cb_join(L.BUILD_DIR, "spark.hex");
+	cb_mkdir_p(L.BUILD_DIR);
 }
 
 static int run(cb_cmd *c) {
@@ -118,8 +135,6 @@ static int cmd_spark(void) {
 }
 
 static int cmd_floppy(void) {
-	cb_mkdir_p(L.BUILD_DIR);
-
 	/* dd if=/dev/zero of=$(BUILD_DIR)/a.img bs=512 count=2880 */
 	{
 		char dd_of[512];
@@ -195,7 +210,7 @@ static int cmd_run_floppy(void) {
 		return 2;
 	}
 
-	const char *log = cb_join(L.BUILD_DIR, "qemu_interrupt.log");
+	const char *log = cb_join(L.OUT, "qemu_interrupt.log");
 	cb_cmd *c = cb_cmd_new();
 	cb_cmd_push_arg(c, qemu);
 	char drive_opts[768];

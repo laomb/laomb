@@ -1,17 +1,29 @@
 org 0x500
 use16
 
-_start:
-    mov si, msg
-    mov ah, 0xe
-.loop:
-    lodsb
-    int 0x10
-    
-    cmp byte [si], 0
-    je .end
-    jmp .loop
-.end:
-    jmp .end
+endl = 10
 
-msg: db 13, 10, 'Booted into SPARK successfully!', 13, 10, 0
+include 'memory_layout.inc'
+include 'print.inc'
+include 'assert.inc'
+include 'panic.inc'
+
+_start:
+	mov ax, stack_segment
+	mov ss, ax
+	
+	mov sp, 0x4000
+
+	call mem_init
+
+	print 10, !mem, 10
+
+	panic 'Spark not implemented.'
+
+include 'source/print.asm'
+include 'source/serial.asm'
+include 'source/memtrack.asm'
+include 'source/panic.asm'
+include 'source/assert.asm'
+
+late_str_finalize
