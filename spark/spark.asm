@@ -23,7 +23,7 @@ _start:
 
 	call mem_init
 
-	panic 'Spark not implemented.'
+	panic '[_start] spark not implemented.'
 
 include 'source/print.asm'
 include 'source/serial.asm'

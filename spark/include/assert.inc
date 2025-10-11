@@ -130,6 +130,20 @@ macro __ASSERT_EVAL __msg, one&
 		cmp ax, bx
 		jae __t
 		jmp __e
+	else match lhs =align rhs, one
+		__ASSERT_LOAD_TO ax, lhs
+		__ASSERT_LOAD_TO bx, rhs
+		
+		test bx, bx
+		jz __e
+		
+		xor dx, dx
+		div bx
+		
+		test dx, dx
+		jz __t
+
+		jmp __e
 	else
 		err 'assert: condition must be "<lhs> (eq|ne|lt|gt|lte|gte) <rhs>"'
 	end match
