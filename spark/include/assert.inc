@@ -2,9 +2,39 @@ macro __ASSERT_LOAD_TO reg?, tok&
 	local __loaded
 	__loaded = 0
 
-	if tok eqtype 1
-		mov reg, tok
-		__loaded = 1
+	if __loaded = 0
+		match &[m], tok
+			lea reg, [m]
+			__loaded = 1
+		end match
+	end if
+
+	if __loaded = 0
+		match byte [m], tok
+			movzx reg, byte [m]
+			__loaded = 1
+		end match
+	end if
+
+	if __loaded = 0
+		match word [m], tok
+			mov reg, word [m]
+			__loaded = 1
+		end match
+	end if
+
+	if __loaded = 0
+		match [m], tok
+			mov reg, word [m]
+			__loaded = 1
+		end match
+	end if
+
+	if __loaded = 0
+		if tok eqtype 1
+			mov reg, tok
+			__loaded = 1
+		end if
 	end if
 
 	if __loaded = 0

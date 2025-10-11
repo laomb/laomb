@@ -9,9 +9,9 @@ REG_MCR = 4
 REG_LSR = 5
 
 LCR_DLAB = 0x80
-LCR_8N1 = 0x03
-FCR_ENABLE_FIFO = 0xC7
-MCR_DTR_RTS_OUT2 = 0x0B
+LCR_8N1 = 0x3
+FCR_ENABLE_FIFO = 0xc7
+MCR_DTR_RTS_OUT2 = 0xb
 LSR_THRE = 0x20
 
 
@@ -28,7 +28,7 @@ serial_init:
 
 ; Set divisor to 3 (38400 baud)
 	mov dx, COM1_BASE + REG_DATA
-	mov al, 0x03
+	mov al, 0x3
 	out dx, al
 	mov dx, COM1_BASE + REG_IER
 	xor al, al
