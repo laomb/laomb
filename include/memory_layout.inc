@@ -22,26 +22,27 @@ kernel_bounce_buffer_segment = 0x1000
 stack_top = 0x4000
 stack_segment = 0x7000
 
-virtual at 0x7c00
-	label bootsector.bdb_jump:3
-	label bootsector.bdb_oem:8
-	label bootsector.bdb_bytes_per_sector:word
-	label bootsector.bdb_sectors_per_cluster:byte
-	label bootsector.bdb_reserved_sectors:word
-	label bootsector.bdb_fat_count:byte
-	label bootsector.bdb_dir_entries_count:word
-	label bootsector.bdb_total_sectors:word
-	label bootsector.bdb_media_descriptor:byte
-	label bootsector.bdb_sectors_per_fat:word
-	label bootsector.bdb_sectors_per_track:word
-	label bootsector.bdb_heads:word
-	label bootsector.bdb_hidden_sectors:dword
-	label bootsector.bdb_large_sector_count:dword
-	
-	label bootsector.ebr_drive_number:byte
-	label bootsector.ebr_windows_nt_flags:byte
-	label bootsector.ebr_signature:byte
-	label bootsector.ebr_volume_id:4
-	label bootsector.ebr_volume_label:11
-	label bootsector.ebr_system_id:8
+virtual at 0x7C00
+	bootsector:
+		.bdb_jump rb 3
+		.bdb_oem rb 8
+		.bdb_bytes_per_sector rw 1
+		.bdb_sectors_per_cluster rb 1
+		.bdb_reserved_sectors rw 1
+		.bdb_fat_count rb 1
+		.bdb_dir_entries_count rw 1
+		.bdb_total_sectors rw 1
+		.bdb_media_descriptor rb 1
+		.bdb_sectors_per_fat rw 1
+		.bdb_sectors_per_track rw 1
+		.bdb_heads rw 1
+		.bdb_hidden_sectors rd 1
+		.bdb_large_sector_count rd 1
+
+		.ebr_drive_number rb 1
+		.ebr_windows_nt_flags rb 1
+		.ebr_signature rb 1
+		.ebr_volume_id rb 4
+		.ebr_volume_label rb 11
+		.ebr_system_id rb 8
 end virtual
