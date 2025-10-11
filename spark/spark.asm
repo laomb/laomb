@@ -14,9 +14,14 @@ _start:
 	
 	mov sp, 0x4000
 
-	call mem_init
+	call serial_init
 
-	print 10, !mem, 10
+	mov al, 10
+	call print_char_rmode
+	mov al, 13
+	call print_char_rmode
+
+	call mem_init
 
 	panic 'Spark not implemented.'
 
