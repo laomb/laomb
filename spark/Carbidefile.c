@@ -6,6 +6,13 @@
 #include <string.h>
 #include <strings.h>
 
+static void set_env(const char *k, const char *v) {
+	if (v && *v)
+		setenv(k, v, 1);
+	else
+		unsetenv(k);
+}
+
 static int have_tool(const char *exe) {
 	const char *PATH = getenv("PATH");
 	if (!PATH)
@@ -36,6 +43,22 @@ static const char *build_mode_asm(void) {
         return "build.mode = build.mode.Release";
 
     return "build.mode = build.mode.Debug";
+}
+
+static void setup_fasmg_env(void) {
+	const layout_t *L = (const layout_t *)cb_shared_current();
+	const char *global_inc_root = cb_join(L->ROOT, "include");
+	const char *spark_inc_root = cb_join(L->SPARK_DIR, "include");
+
+	const char *old = getenv("INCLUDE");
+
+	char merged[8192];
+	if (old && *old) {
+		snprintf(merged, sizeof(merged), "%s;%s;%s", global_inc_root, spark_inc_root, old);
+	} else {
+		snprintf(merged, sizeof(merged), "%s;%s", global_inc_root, spark_inc_root);
+	}
+	set_env("INCLUDE", merged);
 }
 
 static int run(cb_cmd *c) {
@@ -85,6 +108,7 @@ static int cmd_default(void) {
 		cb_log_error("no shared layout handed to spark");
 		return 2;
 	}
+	setup_fasmg_env();
 
 	{
 		const char *src = cb_join(L->SPARK_DIR, "fboot.asm");

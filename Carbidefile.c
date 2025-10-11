@@ -6,13 +6,6 @@
 #include <string.h>
 #include <strings.h>
 
-static void set_env(const char *k, const char *v) {
-	if (v && *v)
-		setenv(k, v, 1);
-	else
-		unsetenv(k);
-}
-
 static int have_tool(const char *exe) {
 	const char *PATH = getenv("PATH");
 	if (!PATH)
@@ -102,21 +95,7 @@ static const char *pick_qemu(void) {
 	return CB_NULL;
 }
 
-static void setup_fasmg_env(void) {
-	const char *inc_root = cb_join(L.ROOT, "include");
-	const char *old = getenv("INCLUDE");
-
-	char merged[8192];
-	if (old && *old) {
-		snprintf(merged, sizeof(merged), "%s;%s", inc_root, old);
-	} else {
-		snprintf(merged, sizeof(merged), "%s", inc_root);
-	}
-	set_env("INCLUDE", merged);
-}
-
 static int cmd_spark(void) {
-	setup_fasmg_env();
 	if (!cb_is_dir(L.SPARK_DIR)) {
 		cb_log_error("missing spark dir: %s", L.SPARK_DIR);
 		return 2;
