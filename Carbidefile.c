@@ -39,6 +39,13 @@ static const char *normalize_mode(const char *in) {
 	return "Debug";
 }
 
+static int want_dos(void) {
+	const char *v = getenv("DOS_DISK");
+	int on = (v && *v) ? 1 : 0;
+	cb_log_verbose("[CFG] DOS_DISK present: %s", on ? "yes" : "no");
+	return on;
+}
+
 static void init_layout(void) {
 	const char *root = cb_workspace_root();
 	L.ROOT = cb_norm(root);
@@ -75,6 +82,15 @@ static int run_simple(const char *prog, const char *const *argv, size_t argc) {
 	return run(c);
 }
 
+static int run_shell(const char *shline) {
+	cb_cmd *c = cb_cmd_new();
+	cb_cmd_push_arg(c, "/bin/sh");
+	cb_cmd_push_arg(c, "-c");
+	cb_cmd_push_arg(c, shline);
+	cb_log_verbose("[SH] /bin/sh -c -- %s", shline);
+	return run(c);
+}
+
 static const char *pick_mkfs_fat(void) {
 	if (have_tool("mkfs.fat"))
 		return "mkfs.fat";
@@ -95,6 +111,25 @@ static const char *pick_qemu(void) {
 	return CB_NULL;
 }
 
+static int ensure_file_downloaded(const char *url, const char *dest) {
+	if (cb_file_exists(dest))
+		return 0;
+
+	cb_log_info("downloading: %s -> %s", url, dest);
+	if (have_tool("curl")) {
+		const char *args[] = {"-L", "--fail", "-o", dest, url};
+		cb_log_verbose("[DL] curl %s %s -o %s %s", "-L", "--fail", dest, url);
+		return run_simple("curl", args, 5);
+	} else if (have_tool("wget")) {
+		const char *args[] = {"-o", dest, url};
+		cb_log_verbose("[DL] wget -o %s %s", dest, url);
+		return run_simple("wget", args, 3);
+	} else {
+		cb_log_error("missing curl/wget for download");
+		return 2;
+	}
+}
+
 static int cmd_spark(void) {
 	if (!cb_is_dir(L.SPARK_DIR)) {
 		cb_log_error("missing spark dir: %s", L.SPARK_DIR);
@@ -113,7 +148,7 @@ static int cmd_spark(void) {
 	return rc;
 }
 
-static int cmd_floppy(void) {
+static int plain_floppy_flow(void) {
 	/* dd if=/dev/zero of=$(BUILD_DIR)/a.img bs=512 count=2880 */
 	{
 		char dd_of[512];
@@ -128,15 +163,15 @@ static int cmd_floppy(void) {
 			return 2;
 	}
 
-	/* mkfs.fat -F 12 -n LAOMB $(BUILD_DIR)/a.img */
+	/* mkfs.fat -F 12 $(BUILD_DIR)/a.img */
 	{
 		const char *mkfs = pick_mkfs_fat();
 		if (!mkfs) {
 			cb_log_error("missing mkfs.fat/mkfs.vfat");
 			return 2;
 		}
-		const char *args[] = {"-F", "12", "-n", "LAOMB", L.IMG};
-		if (run_simple(mkfs, args, 5) != 0)
+		const char *args[] = {"-F", "12", L.IMG};
+		if (run_simple(mkfs, args, 3) != 0)
 			return 2;
 	}
 
@@ -174,23 +209,214 @@ static int cmd_floppy(void) {
 			return 2;
 	}
 
-	/* mcopy -i $(BUILD_DIR)/a.img $(ROOT)/test.txt ::TEST.TXT */
-	const char* test_file = cb_join(L.ROOT, "test.txt");
-	if (!cb_file_exists(test_file)) {
-		cb_log_warn("missing %s - skipping copy", test_file);
-	} else {
+	cb_log_info("floppy image ready: %s", L.IMG);
+	return 0;
+}
+
+static int dos_floppy_flow(void) {
+	const char *DOS_IMG_URL = "https://www.allbootdisks.com/disk_images/Dos6.22.img";
+	const char *dos_img = cb_join(L.BUILD_DIR, "dos622.img");
+	const char *dos_boot_hex = cb_join(L.BUILD_DIR, "MSDOS.HEX");
+
+	if (ensure_file_downloaded(DOS_IMG_URL, dos_img) != 0)
+		return 2;
+
+	{
+		char dd_of[512];
+		snprintf(dd_of, sizeof dd_of, "of=%s", L.IMG);
+		const char *args[] = {"if=/dev/zero", dd_of, "bs=512", "count=2880"};
+		if (!have_tool("dd")) {
+			cb_log_error("missing dd");
+			return 2;
+		}
+		if (run_simple("dd", args, 4) != 0)
+			return 2;
+	}
+	{
+		const char *mkfs = pick_mkfs_fat();
+		if (!mkfs) {
+			cb_log_error("missing mkfs.fat/mkfs.vfat");
+			return 2;
+		}
+		const char *args[] = {"-F", "12", L.IMG};
+		if (run_simple(mkfs, args, 3) != 0)
+			return 2;
+	}
+
+	{
+		char dd_if[512], dd_of[512];
+		snprintf(dd_if, sizeof dd_if, "if=%s", dos_img);
+		snprintf(dd_of, sizeof dd_of, "of=%s", dos_boot_hex);
+		const char *args[] = {dd_if, dd_of, "bs=512", "count=1"};
+		if (run_simple("dd", args, 4) != 0)
+			return 2;
+	}
+
+	if (!cb_file_exists(L.FBOOT_BIN)) {
+		cb_log_error("missing boot sector (fboot.bin) at %s - run 'spark' first", L.FBOOT_BIN);
+		return 2;
+	}
+	{
+		char dd_if[512], dd_of[512];
+		snprintf(dd_if, sizeof dd_if, "if=%s", L.FBOOT_BIN);
+		snprintf(dd_of, sizeof dd_of, "of=%s", L.IMG);
+		const char *args[] = {dd_if, dd_of, "bs=1", "count=512", "conv=notrunc"};
+		if (run_simple("dd", args, 5) != 0)
+			return 2;
+	}
+
+	if (!have_tool("mcopy") || !have_tool("mattrib")) {
+		cb_log_error("missing mtools (mcopy/mattrib)");
+		return 2;
+	}
+	{
+		const char *tmp_io = cb_join(L.BUILD_DIR, "IO.SYS");
+		const char *tmp_ms = cb_join(L.BUILD_DIR, "MSDOS.SYS");
+		const char *tmp_cc = cb_join(L.BUILD_DIR, "COMMAND.COM");
+
+		remove(tmp_io);
+		remove(tmp_ms);
+		remove(tmp_cc);
+
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, dos_img);
+			cb_cmd_push_arg(c, "::IO.SYS");
+			cb_cmd_push_arg(c, tmp_io);
+			if (run(c) != 0)
+				return 2;
+		}
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, dos_img);
+			cb_cmd_push_arg(c, "::MSDOS.SYS");
+			cb_cmd_push_arg(c, tmp_ms);
+			if (run(c) != 0)
+				return 2;
+		}
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, dos_img);
+			cb_cmd_push_arg(c, "::COMMAND.COM");
+			cb_cmd_push_arg(c, tmp_cc);
+			if (run(c) != 0)
+				return 2;
+		}
+
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, L.IMG);
+			cb_cmd_push_arg(c, tmp_io);
+			cb_cmd_push_arg(c, "::IO.SYS");
+			if (run(c) != 0)
+				return 2;
+		}
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, L.IMG);
+			cb_cmd_push_arg(c, tmp_ms);
+			cb_cmd_push_arg(c, "::MSDOS.SYS");
+			if (run(c) != 0)
+				return 2;
+		}
+
+		{
+			const char *args[] = {"-i", L.IMG, "+s", "+h", "+r", "::IO.SYS"};
+			if (run_simple("mattrib", args, 6) != 0)
+				return 2;
+		}
+		{
+			const char *args[] = {"-i", L.IMG, "+s", "+h", "+r", "::MSDOS.SYS"};
+			if (run_simple("mattrib", args, 6) != 0)
+				return 2;
+		}
+
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, L.IMG);
+			cb_cmd_push_arg(c, tmp_cc);
+			cb_cmd_push_arg(c, "::COMMAND.COM");
+			if (run(c) != 0)
+				return 2;
+		}
+	}
+
+	{
+		const char *cfg = cb_join(L.BUILD_DIR, "CONFIG.SYS");
+		const char *bat = cb_join(L.BUILD_DIR, "AUTOEXEC.BAT");
+		char line[1024];
+		snprintf(line, sizeof line, "printf 'FILES=30\r\nBUFFERS=20\r\n' > %s", cfg);
+		if (run_shell(line) != 0)
+			return 2;
+		snprintf(line, sizeof line, "printf '@ECHO OFF\r\nPROMPT $P$G\r\n' > %s", bat);
+		if (run_shell(line) != 0)
+			return 2;
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, L.IMG);
+			cb_cmd_push_arg(c, cfg);
+			cb_cmd_push_arg(c, "::CONFIG.SYS");
+			if (run(c) != 0)
+				return 2;
+		}
+		{
+			cb_cmd *c = cb_cmd_new();
+			cb_cmd_push_arg(c, "mcopy");
+			cb_cmd_push_arg(c, "-i");
+			cb_cmd_push_arg(c, L.IMG);
+			cb_cmd_push_arg(c, bat);
+			cb_cmd_push_arg(c, "::AUTOEXEC.BAT");
+			if (run(c) != 0)
+				return 2;
+		}
+	}
+
+	if (cb_file_exists(L.SPARK_HEX)) {
 		cb_cmd *c = cb_cmd_new();
 		cb_cmd_push_arg(c, "mcopy");
 		cb_cmd_push_arg(c, "-i");
 		cb_cmd_push_arg(c, L.IMG);
-		cb_cmd_push_arg(c, test_file);
-		cb_cmd_push_arg(c, "::TEST.TXT");
+		cb_cmd_push_arg(c, L.SPARK_HEX);
+		cb_cmd_push_arg(c, "::SPARK.HEX");
+		if (run(c) != 0)
+			return 2;
+	} else {
+		cb_log_warn("missing %s - skipping copy", L.SPARK_HEX);
+	}
+	{
+		cb_cmd *c = cb_cmd_new();
+		cb_cmd_push_arg(c, "mcopy");
+		cb_cmd_push_arg(c, "-i");
+		cb_cmd_push_arg(c, L.IMG);
+		cb_cmd_push_arg(c, dos_boot_hex);
+		cb_cmd_push_arg(c, "::MSDOS.HEX");
 		if (run(c) != 0)
 			return 2;
 	}
 
-	cb_log_info("floppy image ready: %s", L.IMG);
+	cb_log_info("DOS floppy image ready: %s", L.IMG);
 	return 0;
+}
+
+static int cmd_floppy(void) {
+	if (want_dos())
+		return dos_floppy_flow();
+
+	return plain_floppy_flow();
 }
 
 static int cmd_run_floppy(void) {
