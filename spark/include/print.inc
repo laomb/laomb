@@ -179,6 +179,107 @@ end if
 	pop eax
 end macro
 
+macro __print_mem_char sz?, mexpr&
+if x86.mode = 16
+	push ax
+
+	mov al, byte [mexpr]
+	call print_char_rmode
+
+	pop ax
+else if x86.mode = 32
+	push eax
+
+	mov al, byte [mexpr]
+	call print_char_pmode
+
+	pop eax
+end if
+end macro
+
+macro __print_cstr_nt p1&
+	local __pcnt_loop, __pcnt_done
+if x86.mode = 16
+	push ax
+	push si
+	match &[m], p1
+		lea si, [m]
+	else
+		mov si, p1
+	end match
+__pcnt_loop:
+	lodsb
+	test al, al
+	jz __pcnt_done
+	call print_char_rmode
+	jmp __pcnt_loop
+__pcnt_done:
+	pop si
+	pop ax
+else if x86.mode = 32
+	push eax
+	push esi
+	match &[m], p1
+		lea esi, [m]
+	else
+		mov esi, p1
+	end match
+__pcnt_loop:
+	lodsb
+	test al, al
+	jz __pcnt_done
+	call print_char_pmode
+	jmp __pcnt_loop
+__pcnt_done:
+	pop esi
+	pop eax
+end if
+end macro
+
+macro __print_cstr_len p2, p1&
+	local __pcl_loop, __pcl_done
+if x86.mode = 16
+	push ax
+	push si
+	push cx
+	match &[m], p1
+		lea si, [m]
+	else
+		mov si, p1
+	end match
+	mov cx, p2
+	jcxz __pcl_done
+__pcl_loop:
+	lodsb
+	call print_char_rmode
+	loop __pcl_loop
+__pcl_done:
+	pop cx
+	pop si
+	pop ax
+else if x86.mode = 32
+	push eax
+	push esi
+	push ecx
+	match &[m], p1
+		lea esi, [m]
+	else
+		mov esi, p1
+	end match
+	mov ecx, p2
+	jecxz __pcl_done
+__pcl_loop:
+	lodsb
+	call print_char_pmode
+	dec ecx
+	jnz __pcl_loop
+__pcl_done:
+	pop ecx
+	pop esi
+	pop eax
+end if
+end macro
+
 macro __print_mem_sz sz?, mexpr&
 if x86.mode = 16
 	if sz eq byte
@@ -299,6 +400,65 @@ if x86.mode = 16
 else if x86.mode = 32
 	call print_hex32_pmode
 end if
+end macro
+
+macro __print_mem_stats
+	local __s_mem,__s_free,__s_blocks,__s_bytes_open,__s_bytes_close,__s_used,__s_total,__s_comma_sp,__s_paren_open,__s_paren_close,__s_eq,__s_sp
+
+	late_str __s_mem, 'mem: ',0
+	late_str __s_free, 'free = 0x',0
+	late_str __s_used, 'used = 0x',0
+	late_str __s_total, 'total = 0x',0
+	late_str __s_blocks, ' blocks',0
+	late_str __s_bytes_open, ' (0x',0
+	late_str __s_bytes_close, ' bytes)',0
+	late_str __s_comma_sp, ', ',0
+
+	push ax
+	push bx
+	push cx
+	push dx
+
+	call mem_stats
+
+	mov dx, bx
+	add dx, cx
+
+	__print_cstr __s_mem
+
+	__print_cstr __s_free
+	__print_reg16 bx
+
+	__print_cstr __s_blocks
+	__print_cstr __s_bytes_open
+		movzx eax, bx
+		shl eax, block_shift
+		__print_eax_hex
+	__print_cstr __s_bytes_close
+
+	__print_cstr __s_comma_sp
+
+	__print_cstr __s_used
+	__print_reg16 cx
+
+	__print_cstr __s_blocks
+	__print_cstr __s_bytes_open
+		movzx eax, cx
+		shl eax, block_shift
+		__print_eax_hex
+	__print_cstr __s_bytes_close
+
+	__print_cstr __s_comma_sp
+
+	__print_cstr __s_total
+	__print_reg16 dx
+	__print_cstr __s_blocks
+	__print_char 10
+
+	pop dx
+	pop cx
+	pop bx
+	pop ax
 end macro
 
 macro print items&
@@ -476,6 +636,17 @@ macro __print_one a&
 	end match
 
 	if __done = 0
+		match =!cstr (__cargs), a
+			match p1=| p2, __cargs
+				__print_cstr_len p2, p1
+			else
+				__print_cstr_nt __cargs
+			end match
+		__done = 1
+		end match
+	end if
+
+	if __done = 0
 		match &[m], a
 			__print_addr m
 			__done = 1
@@ -500,63 +671,7 @@ macro __print_one a&
 
 	if __done = 0
 		match =!mem, a
-			local __s_mem,__s_free,__s_blocks,__s_bytes_open,__s_bytes_close,__s_used,__s_total,__s_comma_sp,__s_paren_open,__s_paren_close,__s_eq,__s_sp
-
-			late_str __s_mem, 'mem: ',0
-			late_str __s_free, 'free = 0x',0
-			late_str __s_used, 'used = 0x',0
-			late_str __s_total, 'total = 0x',0
-			late_str __s_blocks, ' blocks',0
-			late_str __s_bytes_open, ' (0x',0
-			late_str __s_bytes_close, ' bytes)',0
-			late_str __s_comma_sp, ', ',0
-
-			push ax
-			push bx
-			push cx
-			push dx
-
-			call mem_stats
-
-			mov dx, bx
-			add dx, cx
-
-			__print_cstr __s_mem
-
-			__print_cstr __s_free
-			__print_reg16 bx
-
-			__print_cstr __s_blocks
-			__print_cstr __s_bytes_open
-				movzx eax, bx
-				shl eax, block_shift
-				__print_eax_hex
-			__print_cstr __s_bytes_close
-
-			__print_cstr __s_comma_sp
-
-			__print_cstr __s_used
-			__print_reg16 cx
-
-			__print_cstr __s_blocks
-			__print_cstr __s_bytes_open
-				movzx eax, cx
-				shl eax, block_shift
-				__print_eax_hex
-			__print_cstr __s_bytes_close
-
-			__print_cstr __s_comma_sp
-
-			__print_cstr __s_total
-			__print_reg16 dx
-			__print_cstr __s_blocks
-			__print_char 10
-
-			pop dx
-			pop cx
-			pop bx
-			pop ax
-
+			__print_mem_stats
 			__done = 1
 		end match
 	end if
