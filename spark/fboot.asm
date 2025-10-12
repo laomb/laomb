@@ -71,7 +71,7 @@ _start:
 	mul bx
 	add ax, [bdb_reserved_sectors]
 
-	mov al, root_dir_sectors
+	mov si, root_dir_sectors
 	mov bx, root_dir_buffer
 	call disk_read
 
@@ -103,7 +103,7 @@ _start:
 	mov ax, [bdb_reserved_sectors]
 
 	mov bx, fat_buffer
-	mov cx, [bdb_sectors_per_fat]
+	mov si, [bdb_sectors_per_fat]
 	call disk_read
 
 	push word load_seg
@@ -116,11 +116,12 @@ _start:
 	mov ax, [curr_cluster]
 	add ax, 31
 
-	mov cl, 1
+	mov si, 1
 
 	cmp bx, last_sector_before_stage1
 	jae too_large_error
 
+	; mov dl, [ebr_drive_number]
 	call disk_read
 	call print_progress_dot
 
@@ -251,6 +252,7 @@ disk_read:
 .retry:
 	call lba_to_chs
 
+	mov ax, si
 	mov ah, 0x2
 	mov dl, [ebr_drive_number]
 	stc

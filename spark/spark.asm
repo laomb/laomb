@@ -23,27 +23,50 @@ _start:
 
 	call mem_init
 	call blk_init
+	call fat12_init
 
 	call blk_print
 
-	xor si, si
-	mov dx, 1
-	mov bx, 0x7e00
-	call volume_read
+	mov si, test_txt_83
+	call fat12_find_file
+	jc .not_found
 
-	print 'Boot sector: ', 10
-.print_loop:
-	mov al, byte [bx]
-	call print_hex8_rmode
-	mov al, ' '
+	push ebx
+
+	mov ax, kernel_bounce_buffer_segment
+	mov es, ax
+	mov di, kernel_bounce_buffer_offset
+	xor ecx, ecx
+
+	mov si, test_txt_83
+	call fat12_read_file
+	jc .io_fail
+
+	pop ebx
+
+	add ebx, kernel_bounce_buffer_offset
+	mov di, kernel_bounce_buffer_offset
+
+	print 10, '--- TEST.TXT ---', 10
+.print_char_loop:
+	mov al, byte [es:di]
 	call print_char_rmode
 
-	inc bx
+	inc di
+	
+	cmp di, bx
+	je .out
 
-	cmp bx, 0x8000
-	je .done
-	jmp .print_loop
-.done:
+	jmp .print_char_loop
+
+.io_fail:
+	print 'I/O Failure!', 10
+	jmp .out
+
+.not_found:
+	print 'FILE.TXT Not found!', 10
+
+.out:
 	mov al, 10
 	call print_char_rmode
 	mov al, 13
@@ -58,5 +81,7 @@ include 'source/panic.asm'
 include 'source/assert.asm'
 include 'source/disk/blk_bios.asm'
 include 'source/disk/vol.asm'
+include 'source/disk/fat12.asm'
 
 late_str_finalize
+test_txt_83: db 'TEST    TXT'

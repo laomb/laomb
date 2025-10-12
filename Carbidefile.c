@@ -174,6 +174,21 @@ static int cmd_floppy(void) {
 			return 2;
 	}
 
+	/* mcopy -i $(BUILD_DIR)/a.img $(ROOT)/test.txt ::TEST.TXT */
+	const char* test_file = cb_join(L.ROOT, "test.txt");
+	if (!cb_file_exists(test_file)) {
+		cb_log_warn("missing %s - skipping copy", test_file);
+	} else {
+		cb_cmd *c = cb_cmd_new();
+		cb_cmd_push_arg(c, "mcopy");
+		cb_cmd_push_arg(c, "-i");
+		cb_cmd_push_arg(c, L.IMG);
+		cb_cmd_push_arg(c, test_file);
+		cb_cmd_push_arg(c, "::TEST.TXT");
+		if (run(c) != 0)
+			return 2;
+	}
+
 	cb_log_info("floppy image ready: %s", L.IMG);
 	return 0;
 }

@@ -194,7 +194,7 @@ disk_read:
 	mov dl, byte [bootsector.ebr_drive_number]
 	mov al, 1
 	int 0x13
-	jc .error_floppy_read
+	jc .error_floppy_read ; TODO retry 3 times.
 
 	pop dx bx
 
