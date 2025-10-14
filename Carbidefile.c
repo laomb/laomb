@@ -149,6 +149,8 @@ static int cmd_spark(void) {
 }
 
 static int plain_floppy_flow(void) {
+	const char *boot_init = cb_join(L.ROOT, "BOOT.INI");
+
 	/* dd if=/dev/zero of=$(BUILD_DIR)/a.img bs=512 count=2880 */
 	{
 		char dd_of[512];
@@ -196,9 +198,7 @@ static int plain_floppy_flow(void) {
 		cb_log_error("missing mcopy (mtools)");
 		return 2;
 	}
-	if (!cb_file_exists(L.SPARK_HEX)) {
-		cb_log_warn("missing %s - skipping copy", L.SPARK_HEX);
-	} else {
+	if (cb_file_exists(L.SPARK_HEX)) {
 		cb_cmd *c = cb_cmd_new();
 		cb_cmd_push_arg(c, "mcopy");
 		cb_cmd_push_arg(c, "-i");
@@ -207,6 +207,21 @@ static int plain_floppy_flow(void) {
 		cb_cmd_push_arg(c, "::SPARK.HEX");
 		if (run(c) != 0)
 			return 2;
+	} else {
+		cb_log_warn("missing %s - skipping copy", L.SPARK_HEX);
+	}
+
+	if (cb_file_exists(boot_init)) {
+		cb_cmd *c = cb_cmd_new();
+		cb_cmd_push_arg(c, "mcopy");
+		cb_cmd_push_arg(c, "-i");
+		cb_cmd_push_arg(c, L.IMG);
+		cb_cmd_push_arg(c, boot_init);
+		cb_cmd_push_arg(c, "::BOOT.INI");
+		if (run(c) != 0)
+			return 2;
+	} else {
+		cb_log_warn("missing %s - skipping copy", boot_init);
 	}
 
 	cb_log_info("floppy image ready: %s", L.IMG);
@@ -217,6 +232,7 @@ static int dos_floppy_flow(void) {
 	const char *DOS_IMG_URL = "https://www.allbootdisks.com/disk_images/Dos6.22.img";
 	const char *dos_img = cb_join(L.BUILD_DIR, "dos622.img");
 	const char *dos_boot_hex = cb_join(L.BUILD_DIR, "MSDOS.HEX");
+	const char *boot_init = cb_join(L.ROOT, "BOOT.INI");
 
 	if (ensure_file_downloaded(DOS_IMG_URL, dos_img) != 0)
 		return 2;
@@ -489,7 +505,7 @@ static int cmd_clean(void) {
 	cb_cmd *c = cb_cmd_new();
 	cb_cmd_push_arg(c, "rm");
 	cb_cmd_push_arg(c, "-rf");
-	cb_cmd_push_arg(c, cb_join(L.BUILD_DIR, "*"));
+	cb_cmd_push_arg(c, L.BUILD_DIR);
 	(void)run(c);
 
 	cb_strlist_free(&files);

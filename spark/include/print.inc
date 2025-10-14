@@ -21,13 +21,13 @@ macro late_str out_ln?, txt&
 	late_str__count = late_str__count + 1
 end macro
 
-macro late_str_finalize
+postpone
 	if defined late_str__count & (late_str__count > 0)
 		late_str__base = $
 		db late_str__out
 		purge late_str_finalize
 	end if
-end macro
+end postpone
 
 macro __print_reg8 r?
 	push ax

@@ -52,5 +52,3 @@ include 'source/disk/vol.asm'
 include 'source/disk/fat12.asm'
 
 include 'source/tui.asm'
-
-late_str_finalize
