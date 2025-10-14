@@ -469,6 +469,12 @@ macro print items&
 	end if
 end macro
 
+macro print_raw items&
+	iterate __it, items
+		__print_one __it
+	end iterate
+end macro
+
 macro __print_one a&
 	local __done
 	__done = 0
