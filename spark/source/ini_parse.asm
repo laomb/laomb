@@ -1218,7 +1218,10 @@ skip_entries:
 ; Out: CF=0 -> BX=ptr to string bytes in DB, CX=len
 ;      CF=1 -> AH=1 not found, AH=2 wrong type
 query_string:
-	push bp si di es
+	push ax dx bp si di es
+
+	push ds
+    pop es
 
 	push di
 .find_section:
@@ -1281,7 +1284,7 @@ query_string:
 
 	clc
 .qs_out:
-	pop es di si bp
+	pop es di si bp dx ax
 	ret
 
 .invalid:
@@ -1291,6 +1294,88 @@ query_string:
 
 .se_fail:
 	print '[query_string] failed to skip not-queried section', 10
+	stc
+	jmp .qs_out
+
+
+; In:  AX = handle, DS:SI = section cstr, DS:DI = key cstr
+; Out: CF=0 -> DX:AX = value (unsigned 32 bits)
+;      CF=1 -> AH=1 not found, AH=2 wrong type
+query_number:
+	push cx bx bp si di es
+
+	push ds
+    pop es
+
+	push di
+.find_section:
+	mov di, ax
+
+	movzx cx, byte [di]
+	lea di, [di + 3]
+	call memcmp_cx
+	je .found_section
+
+	call skip_entries
+	jc .se_fail
+
+	jmp .find_section
+
+.found_section:
+	add ax, cx
+	add ax, 3
+
+.find_entry:
+	mov si, ax
+	movzx dx, byte [si + 1]
+
+    cmp dx, 2
+	je .skip_string
+	cmp dx, 1
+	jne .invalid
+
+	movzx cx, byte [si]
+	lea si, [si + 2]
+	pop di
+	call memcmp_cx
+	je .found_entry
+	push di
+
+	mov si, ax
+
+	movzx cx, byte [si]
+	add ax, 6
+	add ax, cx
+
+	jmp .find_entry
+
+.skip_string:
+	movzx cx, byte [si]
+	add ax, cx
+	movzx cx, byte [si + 2]
+	add ax, cx
+	add ax, 3
+
+	jmp .find_entry
+
+.found_entry:
+	add si, cx
+
+	mov ax, word [si]
+	mov dx, word [si + 2]
+
+	clc
+.qs_out:
+	pop es di si bp bx cx
+	ret
+
+.invalid:
+	print '[query_number] found invalid entry!', 10
+	stc
+	jmp .qs_out
+
+.se_fail:
+	print '[query_number] failed to skip not-queried section', 10
 	stc
 	jmp .qs_out
 

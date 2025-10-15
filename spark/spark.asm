@@ -1,8 +1,6 @@
 org 0x500
 use16
 
-endl = 10
-
 include 'memory_layout.inc'
 include 'print.inc'
 include 'assert.inc'
