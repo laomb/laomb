@@ -1,4 +1,4 @@
-The following license applies to all source files inside the `core` and `x86` folders, relative to the location of this license.
+The following license applies to all source files inside the `fasm2` folder, relative to the location of this license.
 
 flat assembler 2
 flat assembler g
