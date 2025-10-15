@@ -424,6 +424,19 @@ static int dos_floppy_flow(void) {
 			return 2;
 	}
 
+	if (cb_file_exists(boot_init)) {
+		cb_cmd *c = cb_cmd_new();
+		cb_cmd_push_arg(c, "mcopy");
+		cb_cmd_push_arg(c, "-i");
+		cb_cmd_push_arg(c, L.IMG);
+		cb_cmd_push_arg(c, boot_init);
+		cb_cmd_push_arg(c, "::BOOT.INI");
+		if (run(c) != 0)
+			return 2;
+	} else {
+		cb_log_warn("missing %s - skipping copy", boot_init);
+	}
+
 	cb_log_info("DOS floppy image ready: %s", L.IMG);
 	return 0;
 }

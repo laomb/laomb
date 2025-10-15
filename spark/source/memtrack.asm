@@ -194,6 +194,54 @@ mem_alloc:
 	ret
 
 
+; In: AX = bytes requested
+; Out: CF=0 -> DI points to 512-aligned buffer ; CF=1 -> error
+mem_alloc512:
+	push dx cx bx
+
+	mov bx, ax
+	add ax, 511
+	and ax, 0xFE00
+
+	mov cx, ax
+    add cx, 512 + 16
+
+	push ax
+	mov ax, cx
+    call mem_alloc
+    jc .fail_pop
+
+	mov dx, ax
+    add dx, 511
+    and dx, 0xFE00
+
+	mov cx, ax
+    sub cx, 16 
+	
+    mov di, dx
+    sub di, 16
+
+	mov si, cx
+    movsw
+    movsw
+
+	mov di, dx
+    pop bx
+
+    mov ax, di
+
+    clc
+    pop bx cx dx
+    ret
+
+.fail_pop:
+    pop ax
+.fail:
+    stc
+    pop bx cx dx
+    ret
+
+
 ; In: AX = pointer to memory to free
 ; Out: CF=0 -> ok ; CF=1 -> error
 mem_free:
