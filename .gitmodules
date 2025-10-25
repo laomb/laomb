@@ -1,0 +1,3 @@
+[submodule "docs/lbf"]
+	path = docs/lbf
+	url = https://github.com/laomb/binfmt
