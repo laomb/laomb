@@ -53,9 +53,11 @@ static void init_layout(void) {
 	L.BUILD_DIR = cb_join(L.OUT, "build");
 	L.BUILD_MODE = normalize_mode(getenv("BUILD_MODE"));
 	L.SPARK_DIR = cb_join(L.ROOT, "spark");
+	L.LOOM_DIR = cb_join(L.ROOT, "loom");
 	L.IMG = cb_join(L.BUILD_DIR, "a.img");
 	L.FBOOT_BIN = cb_join(L.BUILD_DIR, "fboot.bin");
 	L.SPARK_HEX = cb_join(L.BUILD_DIR, "spark.hex");
+	L.LOOM_BIN = cb_join(L.BUILD_DIR, "loom.bin");
 	cb_mkdir_p(L.BUILD_DIR);
 }
 
@@ -148,6 +150,24 @@ static int cmd_spark(void) {
 	return rc;
 }
 
+static int cmd_loom(void) {
+	if (!cb_is_dir(L.LOOM_DIR)) {
+		cb_log_error("missing loom dir: %s", L.LOOM_DIR);
+		return 2;
+	}
+
+	if (cb_subrecipe_push(L.LOOM_DIR) != 0) {
+		cb_log_error("failed to load loom/Carbidefile.c");
+		return 2;
+	}
+	cb_subrecipe_set_handoff((void *)&L, CB_OWN_PARENT, CB_NULL);
+
+	int rc = cb_subrecipe_run("build", CB_NULL, 0);
+
+	cb_subrecipe_pop();
+	return rc;
+}
+
 static int plain_floppy_flow(void) {
 	const char *boot_init = cb_join(L.ROOT, "BOOT.INI");
 
@@ -209,6 +229,19 @@ static int plain_floppy_flow(void) {
 			return 2;
 	} else {
 		cb_log_warn("missing %s - skipping copy", L.SPARK_HEX);
+	}
+
+	if (cb_file_exists(L.LOOM_BIN)) {
+		cb_cmd *c = cb_cmd_new();
+		cb_cmd_push_arg(c, "mcopy");
+		cb_cmd_push_arg(c, "-i");
+		cb_cmd_push_arg(c, L.IMG);
+		cb_cmd_push_arg(c, L.LOOM_BIN);
+		cb_cmd_push_arg(c, "::LOOM.BIN");
+		if (run(c) != 0)
+			return 2;
+	} else {
+		cb_log_warn("missing %s - skipping copy", L.LOOM_BIN);
 	}
 
 	if (cb_file_exists(boot_init)) {
@@ -413,6 +446,20 @@ static int dos_floppy_flow(void) {
 	} else {
 		cb_log_warn("missing %s - skipping copy", L.SPARK_HEX);
 	}
+
+	if (cb_file_exists(L.LOOM_BIN)) {
+		cb_cmd *c = cb_cmd_new();
+		cb_cmd_push_arg(c, "mcopy");
+		cb_cmd_push_arg(c, "-i");
+		cb_cmd_push_arg(c, L.IMG);
+		cb_cmd_push_arg(c, L.LOOM_BIN);
+		cb_cmd_push_arg(c, "::LOOM.BIN");
+		if (run(c) != 0)
+			return 2;
+	} else {
+		cb_log_warn("missing %s - skipping copy", L.LOOM_BIN);
+	}
+
 	{
 		cb_cmd *c = cb_cmd_new();
 		cb_cmd_push_arg(c, "mcopy");
@@ -534,7 +581,12 @@ static int cmd_reset(void) {
 		const char *args[] = {};
 		run_simple("clear", args, 0);
 	}
+
 	rc = cmd_spark();
+	if (rc)
+		return rc;
+
+	rc = cmd_loom();
 	if (rc)
 		return rc;
 
@@ -547,6 +599,10 @@ static int cmd_reset(void) {
 
 static int cmd_all(void) {
 	int rc = cmd_spark();
+	if (rc)
+		return rc;
+
+	rc = cmd_loom();
 	if (rc)
 		return rc;
 
@@ -565,6 +621,7 @@ void carbide_recipe_main(cb_context *ctx) {
 
 	cb_register_cmd("all", cmd_all, "build the full suite and run the floppy disk");
 	cb_register_cmd("spark", cmd_spark, "build SPARK");
+	cb_register_cmd("loom", cmd_loom, "build LOOM");
 	cb_register_cmd("floppy", cmd_floppy, "create FAT12 image with boot sector & SPARK.HEX");
 	cb_register_cmd("run-floppy", cmd_run_floppy, "run the floppy in QEMU");
 	cb_register_cmd("run-bochs-floppy", cmd_run_bochs_floppy, "run the floppy in Bochs");

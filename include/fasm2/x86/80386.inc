@@ -87,7 +87,7 @@ define x86.pword? :6
 define x86.fword? :6
 define x86.qword? :8
 
-x86.mode = 16
+x86.mode = 32
 
 macro use16?
 	x86.mode = 16
