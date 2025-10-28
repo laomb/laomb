@@ -6,6 +6,8 @@
 #include <string.h>
 #include <strings.h>
 
+static int common_rebuild(void);
+
 static int have_tool(const char *exe) {
 	const char *PATH = getenv("PATH");
 	if (!PATH)
@@ -496,6 +498,10 @@ static int cmd_floppy(void) {
 }
 
 static int cmd_run_floppy(void) {
+	int rc = common_rebuild();
+	if (rc)
+		return rc;
+
 	const char *qemu = pick_qemu();
 	if (!qemu) {
 		cb_log_error("missing qemu-system-i386/x86_64");
@@ -542,6 +548,10 @@ static int cmd_run_floppy(void) {
 }
 
 static int cmd_run_bochs_floppy(void) {
+	int rc = common_rebuild();
+	if (rc)
+		return rc;
+
 	if (!have_tool("bochs")) {
 		cb_log_error("missing bochs");
 		return 2;
@@ -551,6 +561,7 @@ static int cmd_run_bochs_floppy(void) {
 		return 2;
 	}
 	const char *args[] = {"-qf", "bochsrc_floppy.txt"};
+
 	return run_simple("bochs", args, 2);
 }
 
@@ -582,15 +593,7 @@ static int cmd_reset(void) {
 		run_simple("clear", args, 0);
 	}
 
-	rc = cmd_spark();
-	if (rc)
-		return rc;
-
-	rc = cmd_loom();
-	if (rc)
-		return rc;
-
-	rc = cmd_floppy();
+	rc = common_rebuild();
 	if (rc)
 		return rc;
 
@@ -598,6 +601,14 @@ static int cmd_reset(void) {
 }
 
 static int cmd_all(void) {
+	int rc = common_rebuild();
+	if (rc)
+		return rc;
+
+	return cmd_run_floppy();
+}
+
+static int common_rebuild(void) {
 	int rc = cmd_spark();
 	if (rc)
 		return rc;
@@ -606,11 +617,7 @@ static int cmd_all(void) {
 	if (rc)
 		return rc;
 
-	rc = cmd_floppy();
-	if (rc)
-		return rc;
-
-	return cmd_run_floppy();
+	return cmd_floppy();
 }
 
 static int top_default(void) { return cmd_all(); }
