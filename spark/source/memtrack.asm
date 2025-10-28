@@ -22,8 +22,8 @@ macro __bitmap_addr_from_block
 	shl dl, cl
 
 	add bx, heap_base
-	assert "[__bitmap_addr_from_block]: bx overflow", bx lt heap_limit
-	assert "[__bitmap_addr_from_block]: bx underflow", bx gte heap_base
+	assert "[__bitmap_addr_from_block] bx overflow", bx lt heap_limit
+	assert "[__bitmap_addr_from_block] bx underflow", bx gte heap_base
 end macro
 
 
@@ -44,7 +44,7 @@ is_block_used:
 mark_block_used:
 	pusha
 
-	assert "[mark_block_used]: invalid block index", si lt total_blocks
+	assert "[mark_block_used] invalid block index", si lt total_blocks
 
 	__bitmap_addr_from_block
 	mov al, [bx]
@@ -59,7 +59,7 @@ mark_block_used:
 mark_block_free:
 	pusha
 
-	assert "[mark_block_free]: invalid block index", si lt total_blocks
+	assert "[mark_block_free] invalid block index", si lt total_blocks
 
 	__bitmap_addr_from_block
 	mov al, [bx]
@@ -75,7 +75,7 @@ mark_block_free:
 ; In: CX = number of contiguous free blocks requested
 ; Out: CF=0 -> SI = header_block_index ; CF=1 -> not found
 find_free_run:
-	assert "[find_free_run]: cx=0 invalid", cx gt 0
+	assert "[find_free_run] cx=0 invalid", cx gt 0
 
 	push dx di
 
@@ -246,13 +246,13 @@ mem_alloc512:
 ; Out: CF=0 -> ok ; CF=1 -> error
 mem_free:
 	pusha
-	assert "[mem_free]: invalid free", ax gte heap_base, ax lt heap_limit
+	assert "[mem_free] invalid free", ax gte heap_base, ax lt heap_limit
 
 	mov bx, ax
 	sub bx, heap_base
 	shr bx, block_shift
 
-	assert "[mem_free]: attempted free in bitmap", bx gt data_first_block
+	assert "[mem_free] attempted free in bitmap", bx gt data_first_block
 	dec bx
 
 	mov si, bx
@@ -261,7 +261,7 @@ mem_free:
 	add si, heap_base
 	mov cx, [si]
 	mov ax, [si + 2]
-	assert "[mem_free]: heap corruption", ax eq magic_word
+	assert "[mem_free] heap corruption", ax eq magic_word
 
 	mov si, bx
 .free_loop:
