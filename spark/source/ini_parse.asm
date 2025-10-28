@@ -62,7 +62,11 @@ count_identifier:
 
 .check_underscore:
 	cmp al, '_'
-	jne .done
+	je .accept
+
+.check_qmark:
+    cmp al, '?'
+    jne .done
 
 .accept:
 	inc si
@@ -213,6 +217,9 @@ peek_is_ident:
 .check_underscore:
 	cmp al, '_'
 	je .yes
+
+	cmp al, '?'
+    je .yes
 
 .no:
 	pop ax

@@ -64,6 +64,10 @@ _start:
 	call memcmp_cx
 	jz chainboot_msdos
 
+	mov al, byte [bx]
+	cmp al, '?'
+	je .init_tui
+
 	print_raw 'Invalid boot = ', !cstr(bx | cx), ' found in BOOT.INI', 10, 'Press any key to enter boot manager.', 10
 	call ui_getkey
 
