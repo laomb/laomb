@@ -54,6 +54,8 @@ serial_init:
 
 
 print_serial_rmode:
+	push ax dx
+
 	push ax
 .wait:
 	mov dx, COM1_BASE + REG_LSR
@@ -66,4 +68,27 @@ print_serial_rmode:
 	pop ax
 	out dx, al
 
+	pop dx ax
 	ret
+
+
+use32
+print_serial_pmode:
+	push eax edx
+
+	push eax
+.wait:
+	mov dx, COM1_BASE + REG_LSR
+    in al, dx
+
+    test al, LSR_THRE
+    jz .wait
+
+	mov dx, COM1_BASE + REG_DATA
+	pop eax
+	out dx, al
+
+	pop edx eax
+	ret
+
+use16

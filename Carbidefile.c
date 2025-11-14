@@ -37,6 +37,9 @@ static const char *normalize_mode(const char *in) {
 	if (strcasecmp(in, "Release") == 0)
 		return "Release";
 
+	if (strcasecmp(in, "Trace") == 0)
+		return "Trace";
+
 	cb_log_warn("unknown BUILD_MODE='%s', defaulting to Debug", in);
 	return "Debug";
 }

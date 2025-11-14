@@ -24,7 +24,7 @@ fat12_init:
 	add ax, word [root_dir_sectors]
 	mov word [first_data_sector], ax
 
-	print '[fat12_init] root dir sectors: 0x', word [root_dir_sectors], ' first data sector: 0x', word [first_data_sector], 10
+	print_trace '[fat12_init] root dir sectors: 0x', word [root_dir_sectors], ' first data sector: 0x', word [first_data_sector], 10
 
 	popa
 	ret
@@ -91,7 +91,7 @@ fat12_find_file:
 	mov di, root_dir_buffer
 	mov cx, word [root_dir_sectors]
 	shl cx, 9
-	print '[fat12_find_file] Root dir buffer: ', &[root_dir_buffer], ' bytes to scan: 0x', cx, 10
+	print_trace '[fat12_find_file] Root dir buffer: ', &[root_dir_buffer], ' bytes to scan: 0x', cx, 10
 
 .next_entry:
 	cmp cx, 32
@@ -114,8 +114,8 @@ fat12_find_file:
 	test al, 0x10
 	jnz .skip_entry
 
-	print '[fat12_find_file] Entry @ ', di, ' name: "', !cstr(di | 11)
-	print '" attr: 0x', byte [di + 11], 10
+	print_trace '[fat12_find_file] Entry @ ', di, ' name: "', !cstr(di | 11)
+	print_trace '" attr: 0x', byte [di + 11], 10
 
 	push si
 	mov dx, 11
@@ -137,7 +137,7 @@ fat12_find_file:
 	mov ax, word [di + 26]
 	mov ebx, dword [di + 28]
 
-	print '[fat12_find_file] MATCH FOUND -> first cluster: 0x', ax, ' size: 0x', ebx, 10
+	print_trace '[fat12_find_file] MATCH FOUND -> first cluster: 0x', ax, ' size: 0x', ebx, 10
 
 	clc
 	pop dx cx di
@@ -162,9 +162,9 @@ fat12_find_file:
 fat12_read_file:
 	pusha
 
-	print '[fat12_read_file] request name: "', !cstr(si | 11)
-	print '" req_bytes: 0x', ecx, 10
-	print '[fat12_read_file] buffer target 0x', es, ':0x', di, 10
+	print_trace '[fat12_read_file] request name: "', !cstr(si | 11)
+	print_trace '" req_bytes: 0x', ecx, 10
+	print_trace '[fat12_read_file] buffer target 0x', es, ':0x', di, 10
 
 	assert "[fat12_read_file] di not sector aligned", di align 512
 	assert "[fat12_read_file] cx not sector aligned", cx align 512
@@ -184,7 +184,7 @@ fat12_read_file:
 .align_size:
 	add ecx, 511
 	and ecx, 0xfffffe00
-	print '[fat12_read_file] size(aligned 512): 0x', ecx, 10
+	print_trace '[fat12_read_file] size(aligned 512): 0x', ecx, 10
 
 .next_cluster:
 	cmp ax, 0xff8
@@ -199,7 +199,7 @@ fat12_read_file:
 	pop ax
 
 	movzx bx, byte [bootsector.bdb_sectors_per_cluster]
-	print '[fat12_read_file] cluster: 0x', ax, ' spc: 0x', bx, ' remaining: 0x', ecx, 10
+	print_trace '[fat12_read_file] cluster: 0x', ax, ' spc: 0x', bx, ' remaining: 0x', ecx, 10
 .search_loop:
 	test bx, bx
 	jz .cluster_done
@@ -209,7 +209,7 @@ fat12_read_file:
 
 	push ax bx
 
-	print '  -> read LBA: 0x', si, ' -> 0x', es, ':0x', di, ' remain_before: 0x', ecx, 10
+	print_trace '  -> read LBA: 0x', si, ' -> 0x', es, ':0x', di, ' remain_before: 0x', ecx, 10
 
 	mov dx, 1
 	mov bx, di
@@ -240,7 +240,7 @@ fat12_read_file:
 
 .io_fail:
 	pop bx ax
-	print '[fat12_read_file] I/O Failure when reading file at LBA: 0x', si, ' DI: 0x', di, ' remaining: 0x', ecx, 10
+	print_trace '[fat12_read_file] I/O Failure when reading file at LBA: 0x', si, ' DI: 0x', di, ' remaining: 0x', ecx, 10
 
 	stc
 	popa
@@ -251,13 +251,13 @@ fat12_read_file:
 	jmp .align_size
 
 .not_found:
-	print '[fat12_read_file] File not found!', 10
+	print_trace '[fat12_read_file] File not found!', 10
 	stc
 	popa
 	ret
 
 .done:
-	print '[fat12_read_file] DONE, remaining: 0x', ecx, 10
+	print_trace '[fat12_read_file] DONE, remaining: 0x', ecx, 10
 	clc
 	popa
 	ret

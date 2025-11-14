@@ -89,7 +89,7 @@ tui:
 	jmp .render
 
 .go_continue:
-	jmp continue_boot
+	jmp continue_boot16
 
 .go_msdos:
 	jmp chainboot_msdos

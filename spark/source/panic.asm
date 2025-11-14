@@ -49,14 +49,14 @@ panic_rmode:
 	mov ax, [bp + 12]
 	call print_flags_rmode
 
-	print 10, 'AX: 0x', [bp + 10], ' BX: 0x', [bp + 8], ' CX: 0x', [bp + 6], ' DX: 0x', [bp + 4], 10
-	print 'SI: 0x', [bp + 16], ' DI: 0x', [bp + 2], 10
-	print 'DS: 0x', ds, ' ES: 0x', es, ' FS: 0x', fs, ' GS: 0x', gs, 10
+	print_raw 10, 'AX: 0x', [bp + 10], ' BX: 0x', [bp + 8], ' CX: 0x', [bp + 6], ' DX: 0x', [bp + 4], 10
+	print_raw 'SI: 0x', [bp + 16], ' DI: 0x', [bp + 2], 10
+	print_raw 'DS: 0x', ds, ' ES: 0x', es, ' FS: 0x', fs, ' GS: 0x', gs, 10
 
 	mov bp, sp
 	add bp, stack_adjust_offset
 
-	print 'SS: 0x', ss, ' SP: 0x', bp, 10
+	print_raw 'SS: 0x', ss, ' SP: 0x', bp, 10
 
 	mov si, str_stackdump
 	call print_str_rmode

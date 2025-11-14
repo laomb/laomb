@@ -6,3 +6,4 @@ include 'core/format.inc'
 
 build.mode.Debug = 1
 build.mode.Release = 2
+build.mode.Trace = 0

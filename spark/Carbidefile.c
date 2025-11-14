@@ -39,10 +39,10 @@ static const char *pick_fasmg(void) {
 
 static const char *build_mode_asm(void) {
 	const layout_t *L = (const layout_t *)cb_shared_current();
-    if (L->BUILD_MODE && strcasecmp(L->BUILD_MODE, "Release") == 0)
-        return "build.mode = build.mode.Release";
+	if (L->BUILD_MODE && strcasecmp(L->BUILD_MODE, "Release") == 0)
+		return "build.mode = build.mode.Release";
 
-    return "build.mode = build.mode.Debug";
+	return "build.mode = build.mode.Debug";
 }
 
 static void setup_fasmg_env(void) {
@@ -93,6 +93,10 @@ static int build_one(const layout_t *L, const char *src_asm, const char *out_pat
 	cb_cmd_push_arg(c, ins);
 	cb_cmd_push_arg(c, "-i");
 	cb_cmd_push_arg(c, build_mode_asm());
+	if (L->BUILD_MODE && strcasecmp(L->BUILD_MODE, "Trace") == 0) {
+		cb_cmd_push_arg(c, "-i");
+		cb_cmd_push_arg(c, "build.mode.Trace = 1");
+	}
 
 	cb_cmd_push_arg(c, "-n");
 

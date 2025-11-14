@@ -475,6 +475,14 @@ macro print_raw items&
 	end iterate
 end macro
 
+macro print_trace items&
+	if build.mode.Trace = 1
+		iterate __it, items
+			__print_one __it
+		end iterate
+	end if
+end macro
+
 macro __print_one a&
 	local __done
 	__done = 0

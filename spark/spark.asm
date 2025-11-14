@@ -20,8 +20,16 @@ _start:
 	call print_char_rmode
 
 	call mem_init
+	print 'Memory subsystem initialized!', 10
+
 	call blk_init
+	print 'Block device subsystem initialized!', 10
+
 	call fat12_init
+	print 'fat12 subsystem initialized!', 10
+
+	call e820_init
+	print 'e820 subsystem initialized!', 10
 
 	mov si, str_boot_ini_name
 	call fat12_find_file
@@ -54,7 +62,7 @@ _start:
 	mov si, bx
 	mov di, str_laomb
 	call memcmp_cx
-	jz continue_boot
+	jz continue_boot16
 
 	mov di, str_dos
 	call memcmp_cx
@@ -91,9 +99,6 @@ _start:
 .failed_query:
 	panic '[_start] failed to query [spark].boot'
 
-continue_boot:
-	panic '[continue_boot] continue_boot is unimplemented.'
-
 chainboot_msdos:
 	call check_msdos_present
     cmp al, 0
@@ -120,8 +125,15 @@ include 'source/disk/blk_bios.asm'
 include 'source/disk/vol.asm'
 include 'source/disk/fat12.asm'
 include 'source/ini_parse.asm'
-
+include 'source/e820.asm'
+include 'source/boot_laomb.asm'
 include 'source/tui.asm'
+include 'source32/print.asm'
+include 'source32/panic_pmode.asm'
+include 'source32/lbf_bounds.asm'
+include 'source32/memtrack.asm'
+include 'source32/mem_parse.asm'
+include 'source32/loader.asm'
 
 str_boot_ini_name: db 'BOOT    INI'
 str_spark_section: db 'spark', 0
