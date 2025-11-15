@@ -119,5 +119,5 @@ if build.mode = build.mode.Debug
 
 else
 	lbf_size_from_ptr_error:
-		ret
+		panic 'Error counting loom size!'
 end if
