@@ -101,7 +101,7 @@ _start:
 
 chainboot_msdos:
 	call check_msdos_present
-    cmp al, 0
+	cmp al, 0
 	je .msdos_not_present
 
 	mov dl, [bootsector.ebr_drive_number]
@@ -134,6 +134,7 @@ include 'source32/assert.asm'
 include 'source32/lbf_bounds.asm'
 include 'source32/memtrack.asm'
 include 'source32/mem_parse.asm'
+include 'source32/e820_mod.asm'
 include 'source32/loader.asm'
 
 str_boot_ini_name: db 'BOOT    INI'

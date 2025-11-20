@@ -65,8 +65,8 @@ count_identifier:
 	je .accept
 
 .check_qmark:
-    cmp al, '?'
-    jne .done
+	cmp al, '?'
+	jne .done
 
 .accept:
 	inc si
@@ -219,7 +219,7 @@ peek_is_ident:
 	je .yes
 
 	cmp al, '?'
-    je .yes
+	je .yes
 
 .no:
 	pop ax
@@ -1228,7 +1228,7 @@ query_string:
 	push ax dx bp si di es
 
 	push ds
-    pop es
+	pop es
 
 	push di
 .find_section:
@@ -1312,7 +1312,7 @@ query_number:
 	push cx bx bp si di es
 
 	push ds
-    pop es
+	pop es
 
 	push di
 .find_section:
@@ -1336,7 +1336,7 @@ query_number:
 	mov si, ax
 	movzx dx, byte [si + 1]
 
-    cmp dx, 2
+	cmp dx, 2
 	je .skip_string
 	cmp dx, 1
 	jne .invalid

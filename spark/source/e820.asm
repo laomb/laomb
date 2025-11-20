@@ -12,35 +12,35 @@ E820_MAX_ENTRIES = (4096 / E820_ENTRY_SIZE)
 
 
 e820_init:
-    pusha
+	pusha
 
-    xor ax, ax
-    mov di, e820_buffer
-    mov bp, E820_MAX_ENTRIES
+	xor ax, ax
+	mov di, e820_buffer
+	mov bp, E820_MAX_ENTRIES
 
-    xor ebx, ebx
+	xor ebx, ebx
 .e820_loop:
-    mov eax, 0xe820
-    mov edx, 0x534d4150
-    mov ecx, E820_ENTRY_SIZE
+	mov eax, 0xe820
+	mov edx, 0x534d4150
+	mov ecx, E820_ENTRY_SIZE
 
-    int 0x15
-    jc .done_e820
-    cmp eax, 0x534d4150
-    jne .done_e820
+	int 0x15
+	jc .done_e820
+	cmp eax, 0x534d4150
+	jne .done_e820
 
-    inc byte [e820_entry_count]
+	inc byte [e820_entry_count]
 
-    add di, E820_ENTRY_SIZE
-    dec bp
-    jz .done_e820
+	add di, E820_ENTRY_SIZE
+	dec bp
+	jz .done_e820
 
-    test ebx, ebx
-    jnz .e820_loop
+	test ebx, ebx
+	jnz .e820_loop
 
 .done_e820:
-    popa
-    ret
+	popa
+	ret
 
 
 e820_entry_count db 0

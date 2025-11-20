@@ -628,12 +628,12 @@ postpone
 		load __ALIGN dword from segdesc_table : __SEG_I * sizeof.LBFSSSegDesc + LBFSSSegDesc.alignment
 
 		__FILE_BASE = $%
-        store __FILE_BASE at segdesc_table : __SEG_I * sizeof.LBFSSSegDesc + LBFSSSegDesc.file_base
+		store __FILE_BASE at segdesc_table : __SEG_I * sizeof.LBFSSSegDesc + LBFSSSegDesc.file_base
 
 		repeat 1, vIndex:__SEG_I
 			load __segbytes : sizeof SEG_LABEL_#vIndex from SEG_LABEL_#vIndex:0
 		end repeat
-        db __segbytes
+		db __segbytes
 	end repeat
 
 	repeat SEC_COUNT
@@ -642,19 +642,19 @@ postpone
 		load __KIND word from sec_table : __SEC_I * sizeof.LBFSection + LBFSection.sect_kind
 
 		if __KIND <> LBF_SK_BSS
-            load __SEG_IDX dword from secemit_table : __SEC_I * sizeof.LBFSSSecDesc + LBFSSSecDesc.seg_index
-            load __START dword from secemit_table : __SEC_I * sizeof.LBFSSSecDesc + LBFSSSecDesc.start_off
-            load __END dword from secemit_table : __SEC_I * sizeof.LBFSSSecDesc + LBFSSSecDesc.end_off
+			load __SEG_IDX dword from secemit_table : __SEC_I * sizeof.LBFSSSecDesc + LBFSSSecDesc.seg_index
+			load __START dword from secemit_table : __SEC_I * sizeof.LBFSSSecDesc + LBFSSSecDesc.start_off
+			load __END dword from secemit_table : __SEC_I * sizeof.LBFSSSecDesc + LBFSSSecDesc.end_off
 
-            __SIZE = __END - __START
+			__SIZE = __END - __START
 
-            load __SEG_BASE dword from segdesc_table : __SEG_IDX * sizeof.LBFSSSegDesc + LBFSSSegDesc.file_base
+			load __SEG_BASE dword from segdesc_table : __SEG_IDX * sizeof.LBFSSSegDesc + LBFSSSegDesc.file_base
 
-            __FILE_OFF = __SEG_BASE + __START
+			__FILE_OFF = __SEG_BASE + __START
 
-            store __FILE_OFF at sec_table : __SEC_I * sizeof.LBFSection + LBFSection.file_off
-            store __SIZE at sec_table : __SEC_I * sizeof.LBFSection + LBFSection.file_sz
-        end if
+			store __FILE_OFF at sec_table : __SEC_I * sizeof.LBFSection + LBFSection.file_off
+			store __SIZE at sec_table : __SEC_I * sizeof.LBFSection + LBFSection.file_sz
+		end if
 	end repeat
 
 	SEG_TABLE_SIZE := SEG_COUNT * sizeof.LBFSegDesc

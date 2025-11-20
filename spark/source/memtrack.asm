@@ -204,42 +204,42 @@ mem_alloc512:
 	and ax, 0xFE00
 
 	mov cx, ax
-    add cx, 512 + 16
+	add cx, 512 + 16
 
 	push ax
 	mov ax, cx
-    call mem_alloc
-    jc .fail_pop
+	call mem_alloc
+	jc .fail_pop
 
 	mov dx, ax
-    add dx, 511
-    and dx, 0xFE00
+	add dx, 511
+	and dx, 0xFE00
 
 	mov cx, ax
-    sub cx, 16 
+	sub cx, 16 
 	
-    mov di, dx
-    sub di, 16
+	mov di, dx
+	sub di, 16
 
 	mov si, cx
-    movsw
-    movsw
+	movsw
+	movsw
 
 	mov di, dx
-    pop bx
+	pop bx
 
-    mov ax, di
+	mov ax, di
 
-    clc
-    pop bx cx dx
-    ret
+	clc
+	pop bx cx dx
+	ret
 
 .fail_pop:
-    pop ax
+	pop ax
 .fail:
-    stc
-    pop bx cx dx
-    ret
+	stc
+	pop bx cx dx
+	ret
 
 
 ; In: AX = pointer to memory to free

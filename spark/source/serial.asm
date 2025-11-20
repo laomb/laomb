@@ -79,10 +79,10 @@ print_serial_pmode:
 	push eax
 .wait:
 	mov dx, COM1_BASE + REG_LSR
-    in al, dx
+	in al, dx
 
-    test al, LSR_THRE
-    jz .wait
+	test al, LSR_THRE
+	jz .wait
 
 	mov dx, COM1_BASE + REG_DATA
 	pop eax
