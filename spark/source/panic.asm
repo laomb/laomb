@@ -1,3 +1,4 @@
+if build.mode = build.mode.Debug
 
 stack_adjust_offset = 18 ; 7 (regs+flags) * 2 (word) + 2 (ret addr + caller si) * 2 (word)
 stack_words_to_dump = 16
@@ -109,3 +110,13 @@ str_pad: db '> ', 0
 str_at_csip: db 'CS:IP=', 0
 str_stackdump: db 10, 'Stack dump @ SS:SP', 10, 0
 str_stackdump_limit_reached: db 10, '(stack top reached)', 10, 0
+
+else
+
+panic_rmode:
+	cli
+halt:
+	hlt
+	jmp halt
+
+end if

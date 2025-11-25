@@ -3,6 +3,12 @@
 continue_boot16:
 	call load_kernel_bytes
 
+	mov ah, 0x1
+	mov ch, 0x20
+	xor cl, cl
+	xor bh, bh
+	int 0x10
+
 	cli
 	call enable_a20
 	lgdt [gdt_descriptor]

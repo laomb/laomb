@@ -1,3 +1,4 @@
+if build.mode = build.mode.Debug
 
 stack_adjust_offset = 32 ; 6 (regs) * 4 (dword) + 2 (ret addr + caller esi) * 4 (word)
 stack_dwords_to_dump = 16
@@ -58,5 +59,16 @@ panic_pmode:
 	print_raw 'SS: 0x', ss, ' SP: 0x', ebp, 10
 
 	cli
-	jmp halt
+halt32:
+	hlt
+	jmp halt32
 
+else
+
+panic_pmode:
+	cli
+halt32:
+	hlt
+	jmp halt32
+
+end if

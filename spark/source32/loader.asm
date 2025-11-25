@@ -1,6 +1,8 @@
 use32
 
 continue_boot32:
+	call vga_clear_pmode
+
 	mov esi, kernel_bounce_buffer_flat
 	call lbf_size_from_ptr
 	jc lbf_size_from_ptr_error
@@ -17,15 +19,9 @@ continue_boot32:
 
 	panic '[continue_boot32] Not implemented'
 
-if build.mode = build.mode.Debug
-	no_region_found:
-		panic 'Failed to find a suitable region for kernel!'
-	failed_to_reserve_e820:
-		panic 'Failed to reserve kernel region in e820 memory map!'
-else
-	failed_to_reserve_e820:
-	no_region_found:
-		panic ''
-end if
+no_region_found:
+	panic 'Failed to find a suitable region for kernel!'
+failed_to_reserve_e820:
+	panic 'Failed to reserve kernel region in e820 memory map!'
 
 use16

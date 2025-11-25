@@ -94,30 +94,21 @@ lbf_size_from_ptr:
 	ret
 
 
-if build.mode = build.mode.Debug
 
-	lbf_size_from_ptr_error:
-		cmp eax, lbf_size_from_ptr.errcode.section_table_not_found
-		je .section_table_not_found
+lbf_size_from_ptr_error:
+	cmp eax, lbf_size_from_ptr.errcode.section_table_not_found
+	je .section_table_not_found
 
-		cmp eax, lbf_size_from_ptr.errcode.invalid_magic
-		je .invalid_magic
+	cmp eax, lbf_size_from_ptr.errcode.invalid_magic
+	je .invalid_magic
 
-		jmp .unkown
+	jmp .unkown
 
-	.unkown:
-		panic 'Unknown error!'
-		ret
+.unkown:
+	panic 'Unknown error!'
 
-	.section_table_not_found:
-		panic 'Section table not found!'
-		ret
+.section_table_not_found:
+	panic 'Section table not found!'
 
-	.invalid_magic:
-		panic 'Invalid LBF magic!'
-		ret
-
-else
-	lbf_size_from_ptr_error:
-		panic 'Error counting loom size!'
-end if
+.invalid_magic:
+	panic 'Invalid LBF magic!'
