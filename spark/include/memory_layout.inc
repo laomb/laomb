@@ -18,12 +18,11 @@ label e820_buffer:4096 at 0xf000
 
 kernel_bounce_buffer_offset = 0x2000
 kernel_bounce_buffer_segment = 0x1000
+kernel_bounce_buffer_flat = (kernel_bounce_buffer_segment shl 0x4) + kernel_bounce_buffer_offset
 
 vga_text_memory = 0xb8000
 vga_width = 80
 vga_height = 25
-
-kernel_bounce_buffer_flat = (kernel_bounce_buffer_segment shl 0x4) + kernel_bounce_buffer_offset
 
 stack_top = 0x4000
 stack_segment = 0x7000
