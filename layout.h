@@ -5,7 +5,7 @@ typedef struct {
 	const char *ROOT;		/* workspace root (abs) */
 	const char *OUT;		/* .carbide/out */
 	const char *BUILD_DIR;	/* $(OUT)/build */
-	const char *BUILD_MODE; /* Debug or Release */
+	const char *BUILD_MODE; /* Debug, Trace or Release */
 	const char *SPARK_DIR;	/* $(ROOT)/spark */
 	const char *LOOM_DIR;	/* $(ROOT)/loom */
 	const char *IMG;		/* $(BUILD_DIR)/a.img */
