@@ -17,6 +17,9 @@ continue_boot32:
 	call e820_reserve_kernel
 	jc failed_to_reserve_e820
 
+	call dyngdt_build_gdt
+	jc dyngdt_error
+
 	panic '[continue_boot32] Not implemented'
 
 no_region_found:

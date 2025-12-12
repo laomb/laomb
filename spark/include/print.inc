@@ -403,6 +403,7 @@ end if
 end macro
 
 macro __print_mem_stats
+if x86.mode = 16
 	local __s_mem,__s_free,__s_blocks,__s_bytes_open,__s_bytes_close,__s_used,__s_total,__s_comma_sp,__s_paren_open,__s_paren_close,__s_eq,__s_sp
 
 	late_str __s_mem, 'mem: ',0
@@ -459,6 +460,8 @@ macro __print_mem_stats
 	pop cx
 	pop bx
 	pop ax
+else if x86.mode = 32
+end if
 end macro
 
 macro print items&

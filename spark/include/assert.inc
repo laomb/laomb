@@ -32,13 +32,6 @@ macro __ASSERT_LOAD_TO reg?, tok&
 		end if
 
 		if __loaded = 0
-			if tok eqtype 1
-				mov reg, tok
-				__loaded = 1
-			end if
-		end if
-
-		if __loaded = 0
 			match =ax, tok
 				mov reg, [bp + 26]
 				__loaded = 1
@@ -86,6 +79,13 @@ macro __ASSERT_LOAD_TO reg?, tok&
 			end match
 		end if
 
+		if __loaded = 0
+			if tok eqtype 1
+				mov reg, tok
+				__loaded = 1
+			end if
+		end if
+
 	else if x86.mode = 32
 
 		if __loaded = 0
@@ -117,14 +117,7 @@ macro __ASSERT_LOAD_TO reg?, tok&
 		end if
 
 		if __loaded = 0
-			if tok eqtype 1
-				mov reg, tok
-				__loaded = 1
-			end if
-		end if
-
-		if __loaded = 0
-			match =eax, tok
+			 match =eax, tok
 				mov reg, [ebp + 52]
 				__loaded = 1
 			else match =ebx, tok
@@ -197,6 +190,12 @@ macro __ASSERT_LOAD_TO reg?, tok&
 			end match
 		end if
 
+		if __loaded = 0
+			if tok eqtype 1
+				mov reg, tok
+				__loaded = 1
+			end if
+		end if
 	end if
 
 	if __loaded = 0
@@ -208,7 +207,6 @@ macro __ASSERT_EVAL __msg, one&
 	local __t, __e
 
 	if x86.mode = 16
-
 		xor dx, dx
 
 		match lhs =eq rhs, one
@@ -216,37 +214,31 @@ macro __ASSERT_EVAL __msg, one&
 			__ASSERT_LOAD_TO bx, rhs
 			cmp ax, bx
 			je __t
-			jmp __e
 		else match lhs =ne rhs, one
 			__ASSERT_LOAD_TO ax, lhs
 			__ASSERT_LOAD_TO bx, rhs
 			cmp ax, bx
 			jne __t
-			jmp __e
 		else match lhs =lt rhs, one
 			__ASSERT_LOAD_TO ax, lhs
 			__ASSERT_LOAD_TO bx, rhs
 			cmp ax, bx
 			jb __t
-			jmp __e
 		else match lhs =gt rhs, one
 			__ASSERT_LOAD_TO ax, lhs
 			__ASSERT_LOAD_TO bx, rhs
 			cmp ax, bx
 			ja __t
-			jmp __e
 		else match lhs =lte rhs, one
 			__ASSERT_LOAD_TO ax, lhs
 			__ASSERT_LOAD_TO bx, rhs
 			cmp ax, bx
 			jbe __t
-			jmp __e
 		else match lhs =gte rhs, one
 			__ASSERT_LOAD_TO ax, lhs
 			__ASSERT_LOAD_TO bx, rhs
 			cmp ax, bx
 			jae __t
-			jmp __e
 		else match lhs =align rhs, one
 			__ASSERT_LOAD_TO ax, lhs
 			__ASSERT_LOAD_TO bx, rhs
@@ -258,9 +250,7 @@ macro __ASSERT_EVAL __msg, one&
 			div bx
 			
 			test dx, dx
-			jz __t
-
-			jmp __e
+			jz __t			
 		else
 			err 'assert: condition must be "<lhs> (eq|ne|lt|gt|lte|gte) <rhs>"'
 		end match
@@ -272,48 +262,42 @@ macro __ASSERT_EVAL __msg, one&
 
 			push si
 			mov si, __msg
+
 			call assert_fail_rmode
 		__t:
-
 	else if x86.mode = 32
-
 		xor edx, edx
+
 		match lhs =eq rhs, one
 			__ASSERT_LOAD_TO eax, lhs
 			__ASSERT_LOAD_TO ebx, rhs
 			cmp eax, ebx
 			je __t
-			jmp __e
 		else match lhs =ne rhs, one
 			__ASSERT_LOAD_TO eax, lhs
 			__ASSERT_LOAD_TO ebx, rhs
 			cmp eax, ebx
 			jne __t
-			jmp __e
 		else match lhs =lt rhs, one
 			__ASSERT_LOAD_TO eax, lhs
 			__ASSERT_LOAD_TO ebx, rhs
 			cmp eax, ebx
 			jb __t
-			jmp __e
 		else match lhs =gt rhs, one
 			__ASSERT_LOAD_TO eax, lhs
 			__ASSERT_LOAD_TO ebx, rhs
 			cmp eax, ebx
 			ja __t
-			jmp __e
 		else match lhs =lte rhs, one
 			__ASSERT_LOAD_TO eax, lhs
 			__ASSERT_LOAD_TO ebx, rhs
 			cmp eax, ebx
 			jbe __t
-			jmp __e
 		else match lhs =gte rhs, one
 			__ASSERT_LOAD_TO eax, lhs
 			__ASSERT_LOAD_TO ebx, rhs
 			cmp eax, ebx
 			jae __t
-			jmp __e
 		else match lhs =align rhs, one
 			__ASSERT_LOAD_TO eax, lhs
 			__ASSERT_LOAD_TO ebx, rhs
@@ -323,7 +307,6 @@ macro __ASSERT_EVAL __msg, one&
 			div ebx
 			test edx, edx
 			jz __t
-			jmp __e
 		else
 			err 'assert: condition must be "<lhs> (eq|ne|lt|gt|lte|gte|align) <rhs>"'
 		end match
@@ -332,13 +315,31 @@ macro __ASSERT_EVAL __msg, one&
 			add esp, 24
 			popad
 			popfd
+
 			push esi
 			mov esi, __msg
+
 			call assert_fail_pmode
 		__t:
-
 	end if
+end macro
 
+macro __ASSERT_RESTORE
+	if x86.mode = 16
+		mov ax, [bp + 26]
+		mov cx, [bp + 24]
+		mov dx, [bp + 22]
+		mov bx, [bp + 20]
+		mov si, [bp + 14]
+		mov di, [bp + 12]
+	else if x86.mode = 32
+		mov eax, [ebp + 52]
+		mov ecx, [ebp + 48]
+		mov edx, [ebp + 44]
+		mov ebx, [ebp + 40]
+		mov esi, [ebp + 28]
+		mov edi, [ebp + 24]
+	end if
 end macro
 
 macro assert msg, conditions&
@@ -369,6 +370,7 @@ macro assert msg, conditions&
 		end if
 
 		iterate __one, conditions
+			__ASSERT_RESTORE
 			__ASSERT_EVAL __msglbl, __one
 		end iterate
 

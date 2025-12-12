@@ -1,6 +1,6 @@
 megs: 64
-romimage: file=/usr/share/bochs/BIOS-bochs-latest
-vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest
+romimage: file=/usr/local/share/bochs/BIOS-bochs-latest
+vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 floppya: 1_44=.carbide/out/build/a.img, status=inserted
 boot: a
 log: .carbide/out/bochs.log

@@ -3,7 +3,13 @@ use32
 LBF_MAGIC = 0x1a4c4246
 PAGE_SIZE = 4096
 
+LBF_T_SEGMENTS = 1
 LBF_T_SECTIONS = 2
+
+LBF_ST_CODE_RX = 1
+LBF_ST_DATA_RW = 3
+LBF_ST_DATA_RO = 4
+LBF_ST_STACK_RW = 5
 
 LBFHeader.magic = 0
 LBFHeader.version = 4
@@ -36,6 +42,16 @@ LBFSection.mem_sz = 20
 LBFSection.align = 24
 LBFSection.flags = 28
 sizeof.LBFSection = 32
+
+LBFSegDesc.seg_index = 0
+LBFSegDesc.type = 2
+LBFSegDesc.reserved = 3
+LBFSegDesc.vlimit = 4
+LBFSegDesc.alignment = 8
+LBFSegDesc.sect_start = 12
+LBFSegDesc.sect_count = 16
+LBFSegDesc.flags = 20
+sizeof.LBFSegDesc = 24
 
 lbf_size_from_ptr.errcode.invalid_magic = 1
 lbf_size_from_ptr.errcode.section_table_not_found = 2
