@@ -1,7 +1,8 @@
-org 0x7c00
+org spark_stage1_base
 
 include 'bios/disk.asm'
 include 'bios/unsafe_print.asm'
+include 'memory_layout.asm'
 
 bytes_per_sector = 512
 root_dir_entries_count = 0xe0
@@ -11,7 +12,7 @@ jmp short _start
 nop
 
 ;
-; bdb_oem is mostly unused by DOS/BIOS, for this reason we have 4 free words to use for our purposes.
+; bdb_oem, mostly unused by DOS/BIOS, for this reason we have 4 free words to use for our purposes.
 ;
 ; word(0) - word(2): bootstrap stack for frame standartization.
 ; byte(6): current_cluster counter for fat12 parsing
@@ -20,48 +21,46 @@ nop
 ; word(1): far return CS
 ; word(2): initial SP
 ;
-
-label bdb_oem:8
 	dw @f
 	dw 0
-	dw 0x7c00
+	dw spark_stage1_base
 	dw 0
-label bdb_bytes_per_sector:word
+; bdb_bytes_per_sector
 	dw bytes_per_sector
-label bdb_sectors_per_cluster:byte
+; bdb_sectors_per_cluster
 	db 1
-label bdb_reserved_sectors:word
+; bdb_reserved_sectors
 	dw 1
-label bdb_fat_count:byte
+; bdb_fat_count
 	db 2
-label bdb_dir_entries_count:word
+; bdb_dir_entries_count
 	dw root_dir_entries_count
-label bdb_total_sectors:word
+; bdb_total_sectors
 	dw 2880
-label bdb_media_descriptor:byte
+; bdb_media_descriptor
 	db 0xf0
-label bdb_sectors_per_fat:word
+; bdb_sectors_per_fat
 	dw 9
-label bdb_sectors_per_track:word
+; bdb_sectors_per_track
 	dw 18
-label bdb_heads:word
+; bdb_heads
 	dw 2
-label bdb_hidden_sectors:dword
+; bdb_hidden_sectors
 	dd 0
-label bdb_large_sector_count:dword
+; bdb_large_sector_count
 	dd 0
 
-label ebr_drive_number:byte
+; ebr_drive_number
 	db 0
-label ebr_windows_nt_flags:byte
+; ebr_windows_nt_flags
 	db 0
-label ebr_signature:byte
+; ebr_signature
 	db 0x29
-label ebr_volume_id:dword
+; ebr_volume_id
 	db 0x12, 0x34, 0x56, 0x78
-label ebr_volume_label:11
+; ebr_volume_label
 	db 'LAOMB    OS'
-label ebr_system_id:8
+; ebr_system_id
 	db 'FAT12   '
 
 label zj_bytes:word at bdb_oem
