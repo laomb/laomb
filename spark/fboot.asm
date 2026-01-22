@@ -5,8 +5,16 @@ include 'bios/unsafe_print.asm'
 include 'memory_layout.asm'
 
 bytes_per_sector = 512
+fat_count = 2
+sectors_per_fat = 9
+reserved_sectors = 1
+
 root_dir_entries_count = 0xe0
 root_dir_sectors = (root_dir_entries_count * 32 + bytes_per_sector - 1) / bytes_per_sector
+
+fat_area_sectors = fat_count * sectors_per_fat
+root_directory_start = fat_area_sectors + reserved_sectors
+data_area_start = root_directory_start + root_dir_sectors
 
 jmp short _start
 nop
@@ -30,9 +38,9 @@ nop
 ; bdb_sectors_per_cluster
 	db 1
 ; bdb_reserved_sectors
-	dw 1
+	dw reserved_sectors
 ; bdb_fat_count
-	db 2
+	db fat_count
 ; bdb_dir_entries_count
 	dw root_dir_entries_count
 ; bdb_total_sectors
@@ -40,7 +48,7 @@ nop
 ; bdb_media_descriptor
 	db 0xf0
 ; bdb_sectors_per_fat
-	dw 9
+	dw sectors_per_fat
 ; bdb_sectors_per_track
 	dw 18
 ; bdb_heads
@@ -91,12 +99,139 @@ _start:
 	; DL = # of drives
 	get_drive_parameters floppy_error
 
+	mov es, ax
+
+	; mask cylinder count, we do not need it for any calculations.
+	and cl, 0x3f
+	mov byte [bdb_sectors_per_track], cl
+
+	; convert 0-based index of the highest head to # of heads.
+	inc dh
+	mov byte [bdb_heads], dh
+
+	; load root directory into memory.
+	mov si, root_directory_start
+	mov al, root_dir_sectors
+	mov bx, root_dir_buffer
+	call disk_read
+
+	; directory entry iterator.
+	xor dx, dx
+.iterate_root_directory:
+	mov cx, 11
+	mov si, target_filename
+	mov di, bx
+
+	rep cmpsb
+	jz .found_spark
+
+	; move to the next directory entry.
+	add bx, 32
+
+	inc dx
+	cmp dx, root_dir_entries_count
+	jl .iterate_root_directory
+
+	jmp spark_not_found_error
+
+.found_spark:
+	unsafe_print "Found SPARK.HEX", endl, 0
+
 	jmp $
+
+; Reads AL sectors into memory from SI at ES:BX
+; SI = start lba to read
+; AL = # sectors to read
+; ES:BX = data out buffer
+disk_read:
+	pusha
+
+	mov di, 3
+.retry:
+	call lba_to_chs
+
+	; READ SECTOR(S) INTO MEMORY
+	; AL = # of sectors to read
+	; CH = 0..7 cylinder number
+	; CL = 0..5 sector number 1-63
+	; DH = head number
+	; DL = drive number
+	; ES:BX = data out buffer
+	mov ah, 0x2
+	mov dl, [ebr_drive_number]
+	int 0x13
+
+	jnc .ok
+
+	; on error, reset controller and retry.
+	call disk_reset
+
+	dec di
+	jnz .retry
+
+	jmp floppy_error
+
+.ok:
+	popa
+	ret
+
+; Converts LBA in SI to CHS in CL/CH/DH
+lba_to_chs:
+	push ax
+	push dx
+
+	mov ax, si
+
+	; quotient is track, remainder is sector index.
+	xor dx, dx
+	div word [bdb_sectors_per_track] ; LBA
+
+	; adjust sector index to be 1-based for BIOS.
+	inc dx
+	mov cx, dx
+
+	; quotient is cylinder, remainder is head.
+	xor dx, dx
+	div word [bdb_heads] ; track
+
+	; head.
+	mov dh, dl
+	; cylinder low 8 bits.
+	mov ch, al
+
+	; cylinder high bits into CL 6..7.
+	shl ah, 6
+	or cl, ah
+
+	; only restore the drive number, do not overwrite head number.
+	pop ax
+	mov dl, al
+
+	pop ax
+	ret
+
+disk_reset:
+	pusha
+
+	; RESET DISK SYSTEM
+	; DL = drive
+	xor ah, ah
+	int 0x13
+	jc floppy_error
+
+	popa
+	ret
 
 floppy_error:
 	unsafe_print "Floppy disk error", endl, 0
 	jmp panic
 
+spark_not_found_error:
+	unsafe_print "SPARK.HEX not found", endl, 0
+	jmp panic
+
+; Prints a string using TELETYPE OUTPUT
+; SI = null-terminated string to print
 puts:
 	lodsb
 	test al, al
@@ -124,6 +259,9 @@ if defined unsafe_print_lstr__count & (unsafe_print_lstr__count > 0)
 	unsafe_print_lstr__base = $
 	db unsafe_print_lstr__out
 end if
+
+target_filename:
+	db 'SPARK   HEX'
 
 rb 510 - ($ - $$)
 dw 0xaa55

@@ -4,6 +4,8 @@ label spark_stage2_base at 0x500
 ; MBR bootsector has to relocate partition data and it's code and load the VBR to this address.
 label spark_vbr_base:512 at 0x7c00
 
+label root_dir_buffer at 0x7e00
+
 virtual at spark_vbr_base
 	rb 3
 
