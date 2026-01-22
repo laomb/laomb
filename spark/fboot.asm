@@ -110,10 +110,7 @@ _start:
 	mov byte [bdb_heads], dh
 
 	; load root directory into memory.
-	mov si, root_directory_start
-	mov al, root_dir_sectors
-	mov bx, root_dir_buffer
-	call disk_read
+	unsafe_read_disk root_directory_start, root_dir_sectors, root_dir_buffer
 
 	; directory entry iterator.
 	xor dx, dx
@@ -121,6 +118,9 @@ _start:
 	mov cx, 11
 	mov si, target_filename
 	mov di, bx
+
+	cmp byte [bx], 0
+	je spark_not_found_error
 
 	rep cmpsb
 	jz .found_spark
