@@ -1,0 +1,15 @@
+megs: 64
+romimage: file=/usr/local/share/bochs/BIOS-bochs-latest
+vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
+floppya: 1_44=build/a.img, status=inserted
+boot: a
+log: build/bochs.log
+debugger_log: build/bochs_debug.log
+mouse: enabled=0
+display_library: x, options="gui_debug"
+keyboard: type=mf, serial_delay=250, paste_delay=100000
+com1: enabled=1, mode=file, dev=build/serial.log
+
+clock: sync=realtime, time0=local
+cpu: count=1, ips=10000000, reset_on_triple_fault=0
+magic_break: enabled=1
