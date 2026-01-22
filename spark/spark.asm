@@ -1,8 +1,14 @@
 org 0x500
 
 include 'bios/unsafe_print.asm'
+include 'memory_layout.asm'
 
 _start:
+	mov ax, stack_segment
+
+	mov ss, ax
+	mov sp, stack_top
+
     unsafe_print "Hello from stage 2!", 13, 10, 0
     jmp $
 

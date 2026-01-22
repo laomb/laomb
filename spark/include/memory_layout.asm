@@ -7,6 +7,9 @@ label spark_vbr_base:512 at 0x7c00
 label root_dir_buffer at 0x7e00
 label fat_buffer at 0x9a00
 
+stack_top = 0x4000
+stack_segment = 0x7000
+
 virtual at spark_vbr_base
 	rb 3
 
