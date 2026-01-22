@@ -91,8 +91,6 @@ _start:
 	; DL = # of drives
 	get_drive_parameters floppy_error
 
-	unsafe_print "Hello World!", endl, 0 ; TODO remove
-
 	jmp $
 
 floppy_error:
@@ -116,8 +114,10 @@ puts:
 panic:
 	unsafe_print "Press any key to reboot", endl, 0
 
+	; GET KEYSTROKE
 	xor ah, ah
 	int 0x16
+
 	jmp 0x0ffff:0
 
 if defined unsafe_print_lstr__count & (unsafe_print_lstr__count > 0)
