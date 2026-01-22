@@ -12,9 +12,14 @@ reserved_sectors = 1
 root_dir_entries_count = 0xe0
 root_dir_sectors = (root_dir_entries_count * 32 + bytes_per_sector - 1) / bytes_per_sector
 
+fat_area_start = reserved_sectors
+fat_second_copy_start = reserved_sectors + sectors_per_fat
 fat_area_sectors = fat_count * sectors_per_fat
 root_directory_start = fat_area_sectors + reserved_sectors
 data_area_start = root_directory_start + root_dir_sectors
+
+; address of the last sector that we can load before overwriting stage 1 code.
+sanity_sector =  0x7a00
 
 jmp short _start
 nop
@@ -23,7 +28,7 @@ nop
 ; bdb_oem, mostly unused by DOS/BIOS, for this reason we have 4 free words to use for our purposes.
 ;
 ; word(0) - word(2): bootstrap stack for frame standartization.
-; byte(6): current_cluster counter for fat12 parsing
+; word(3): current_cluster counter for fat12 parsing
 ;
 ; word(0): far return IP
 ; word(1): far return CS
@@ -72,7 +77,7 @@ nop
 	db 'FAT12   '
 
 label zj_bytes:word at bdb_oem
-label current_cluster:byte at bdb_oem + 6
+label current_cluster:word at bdb_oem + 6
 
 _start:
 	; clear IF so a conveniently placed SP and interrupt won't corrupt our code.
@@ -99,6 +104,7 @@ _start:
 	; DL = # of drives
 	get_drive_parameters floppy_error
 
+	xor ax, ax
 	mov es, ax
 
 	; mask cylinder count, we do not need it for any calculations.
@@ -135,9 +141,79 @@ _start:
 	jmp spark_not_found_error
 
 .found_spark:
-	unsafe_print "Found SPARK.HEX", endl, 0
+	; save the first cluster of spark.hex.
+	mov ax, word [bx + 26]
+	mov word [current_cluster], ax
 
-	jmp $
+	; load the first copy of the FAT into memory
+	unsafe_read_disk fat_area_start, sectors_per_fat, fat_buffer
+
+	mov bx, spark_stage2_base
+
+	; maximum cluster length before we assume the FAT is corrupted.
+	push word 2849
+	mov bp, sp
+.load_spark_loop:
+	; convert cluster to lba.
+	mov si, word [current_cluster]
+	add si, 31
+
+	; did we run out of space?
+	cmp bx, sanity_sector
+	jae too_large_error
+
+	; read one sector.
+	unsafe_read_disk si, 1, bx
+
+	; advance to next sector.
+	add bx, bytes_per_sector
+
+	; offset = cluster * 3 / 2
+	mov ax, word [current_cluster]
+
+	mov cx, 3
+	mul cx
+
+	mov cx, 2
+	div cx
+
+	; get the next cluster.
+	mov si, fat_buffer
+	add si, ax
+	mov ax, word [si]
+
+	or dx, dx
+	jz .even
+
+	; for odd clusters, use the 12 high bits of the word.
+.odd:
+	shr ax, 4
+	jmp .next_cluster
+
+	; for even clusters, use the 12 low bits of the word.
+.even:
+	and ax, 0x0fff
+.next_cluster:
+	cmp ax, 0x0ff7
+	je fs_corrupt
+
+	cmp ax, 0x0ff8
+	jae .read_finish
+
+	; save the next cluster.
+	mov word [current_cluster], ax
+
+	; did we walk the entire cluster chain?
+	mov ax, word [bp]
+	test ax, ax
+	jz fs_corrupt
+
+	dec word [bp]
+
+	jmp .load_spark_loop
+
+.read_finish:
+	jmp 0x0:spark_stage2_base
 
 ; Reads AL sectors into memory from SI at ES:BX
 ; SI = start lba to read
@@ -230,6 +306,22 @@ spark_not_found_error:
 	unsafe_print "SPARK.HEX not found", endl, 0
 	jmp panic
 
+too_large_error:
+	unsafe_print "SPARK.HEX is too large", endl, 0
+	jmp panic
+
+fs_corrupt:
+	unsafe_print "FAT corruption", endl, 0
+
+panic:
+	unsafe_print "Press a key to reboot", endl, 0
+
+	; GET KEYSTROKE
+	xor ah, ah
+	int 0x16
+
+	jmp 0x0ffff:0
+
 ; Prints a string using TELETYPE OUTPUT
 ; SI = null-terminated string to print
 puts:
@@ -245,15 +337,6 @@ puts:
 
 .done:
 	ret
-
-panic:
-	unsafe_print "Press any key to reboot", endl, 0
-
-	; GET KEYSTROKE
-	xor ah, ah
-	int 0x16
-
-	jmp 0x0ffff:0
 
 if defined unsafe_print_lstr__count & (unsafe_print_lstr__count > 0)
 	unsafe_print_lstr__base = $

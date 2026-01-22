@@ -5,6 +5,7 @@ label spark_stage2_base at 0x500
 label spark_vbr_base:512 at 0x7c00
 
 label root_dir_buffer at 0x7e00
+label fat_buffer at 0x9a00
 
 virtual at spark_vbr_base
 	rb 3
