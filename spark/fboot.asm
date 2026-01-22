@@ -81,7 +81,6 @@ label current_cluster:word at bdb_oem + 6
 
 _start:
 	; clear IF so a conveniently placed SP and interrupt won't corrupt our code.
-	cli
 	xor ax, ax
 	mov ss, ax
 
@@ -91,7 +90,6 @@ _start:
 
 @@:
 	pop sp
-	sti
 
 	mov ds, ax
 	mov [ebr_drive_number], dl
@@ -314,7 +312,7 @@ fs_corrupt:
 	unsafe_print "FAT corruption", endl, 0
 
 panic:
-	unsafe_print "Press a key to reboot", endl, 0
+	unsafe_print "Press any key to reboot", endl, 0
 
 	; GET KEYSTROKE
 	xor ah, ah
