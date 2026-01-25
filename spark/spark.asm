@@ -20,3 +20,4 @@ _start:
 
 include 'source16/print.asm'
 include 'source16/serial.asm'
+include 'source16/arena.asm'

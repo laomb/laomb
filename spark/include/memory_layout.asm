@@ -10,6 +10,9 @@ label fat_buffer at 0x9a00
 stack_top = 0x4000
 stack_segment = 0x7000
 
+heap_base = 0xc000
+heap_limit = 0xe800
+
 virtual at spark_vbr_base
 	rb 3
 
