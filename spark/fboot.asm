@@ -99,14 +99,15 @@ _start:
 	; CL = 0..5 max sector, 6..7 max cylinder high
 	; DH = max head
 	; DL = # of drives
-	get_drive_parameters floppy_error
+	get_drive_parameters
+	jc floppy_error
 
 	xor ax, ax
 	mov es, ax
 
 	; mask cylinder count, we do not need it for any calculations.
-	and cl, 0x3f
-	mov byte [bdb_sectors_per_track], cl
+	and cx, 0x3f
+	mov word [bdb_sectors_per_track], cx
 
 	; convert 0-based index of the highest head to # of heads.
 	inc dh
@@ -236,9 +237,12 @@ disk_read:
 
 	jnc .ok
 
-	; on error, reset controller and retry.
-	call disk_reset
+	; RESET DISK SYSTEM
+	; DL = drive
+	floppy_disk_reset
+	jc floppy_error
 
+	; try again!
 	dec di
 	jnz .retry
 
@@ -281,18 +285,6 @@ lba_to_chs:
 	mov dl, al
 
 	pop ax
-	ret
-
-disk_reset:
-	pusha
-
-	; RESET DISK SYSTEM
-	; DL = drive
-	xor ah, ah
-	int 0x13
-	jc floppy_error
-
-	popa
 	ret
 
 floppy_error:

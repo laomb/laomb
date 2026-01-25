@@ -14,7 +14,7 @@ print_char16:
 	pusha
 
 	call serial_putb16
-	
+
 	mov ah, 0xe
 	xor bx, bx
 	int 0x10
