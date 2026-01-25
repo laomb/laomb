@@ -98,7 +98,7 @@ _start:
 	; CH = 0..7 max cylinder
 	; CL = 0..5 max sector, 6..7 max cylinder high
 	; DH = max head
-	; DL = # of drives
+	; DL = number of drives
 	get_drive_parameters
 	jc floppy_error
 
@@ -109,7 +109,7 @@ _start:
 	and cx, 0x3f
 	mov word [bdb_sectors_per_track], cx
 
-	; convert 0-based index of the highest head to # of heads.
+	; convert 0-based index of the highest head to number of heads.
 	inc dh
 	mov byte [bdb_heads], dh
 
@@ -215,7 +215,7 @@ _start:
 
 ; Reads AL sectors into memory from SI at ES:BX
 ; SI = start lba to read
-; AL = # sectors to read
+; AL = number sectors to read
 ; ES:BX = data out buffer
 disk_read:
 	pusha
@@ -225,7 +225,7 @@ disk_read:
 	call lba_to_chs
 
 	; READ SECTOR(S) INTO MEMORY
-	; AL = # of sectors to read
+	; AL = number of sectors to read
 	; CH = 0..7 cylinder number
 	; CL = 0..5 sector number 1-63
 	; DH = head number
