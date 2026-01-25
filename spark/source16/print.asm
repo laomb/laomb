@@ -8,7 +8,6 @@ macro nibble_to_ascii
 	add al, 7
 @@:
 	add al, '0'
-
 end macro
 
 print_char16:

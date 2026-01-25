@@ -80,7 +80,6 @@ label zj_bytes:word at bdb_oem
 label current_cluster:word at bdb_oem + 6
 
 _start:
-	; clear IF so a conveniently placed SP and interrupt won't corrupt our code.
 	xor ax, ax
 	mov ss, ax
 

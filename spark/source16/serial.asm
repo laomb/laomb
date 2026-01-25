@@ -56,6 +56,7 @@ serial_init:
 serial_putb16:
 	push dx ax
 
+	; wait for the serial controller to be ready for transmitting.
 .wait_thre_clear:
 	mov dx, com1_base + reg_line_status
 	in al, dx
@@ -65,6 +66,7 @@ serial_putb16:
 
 	pop ax
 
+	; send the byte.
 	mov dx, com1_base + reg_data
 	out dx, al
 
