@@ -11,7 +11,6 @@ $(DOS_IMG):
 		echo "error: missing curl/wget for download" >&2
 		exit 2
 	fi
-	echo "downloading: $(DOS_URL) -> $@"
 	if [ "$$dl" = "curl" ]; then
 		curl -L --fail -o "$@" "$(DOS_URL)"
 	else
@@ -36,23 +35,15 @@ define make_plain_floppy
 
 	if [ -f "$(SPARK_HEX)" ]; then
 		mcopy -i "$(IMG)" "$(SPARK_HEX)" ::SPARK.HEX
-	else
-		echo "warn: missing $(SPARK_HEX) - skipping copy" >&2
 	fi
 
 	if [ -f "$(LOOM_BIN)" ]; then
 		mcopy -i "$(IMG)" "$(LOOM_BIN)" ::LOOM.BIN
-	else
-		echo "warn: missing $(LOOM_BIN) - skipping copy" >&2
 	fi
 
 	if [ -f "$(ROOT)/BOOT.INI" ]; then
 		mcopy -i "$(IMG)" "$(ROOT)/BOOT.INI" ::BOOT.INI
-	else
-		echo "warn: missing $(ROOT)/BOOT.INI - skipping copy" >&2
 	fi
-
-	echo "floppy image ready: $(IMG)"
 endef
 
 define make_dos_floppy
@@ -97,25 +88,17 @@ define make_dos_floppy
 
 	if [ -f "$(SPARK_HEX)" ]; then
 		mcopy -i "$(IMG)" "$(SPARK_HEX)" ::SPARK.HEX
-	else
-		echo "warn: missing $(SPARK_HEX) - skipping copy" >&2
 	fi
 
 	if [ -f "$(LOOM_BIN)" ]; then
 		mcopy -i "$(IMG)" "$(LOOM_BIN)" ::LOOM.BIN
-	else
-		echo "warn: missing $(LOOM_BIN) - skipping copy" >&2
 	fi
 
 	mcopy -i "$(IMG)" "$(DOS_BOOT_HEX)" ::MSDOS.HEX
 
 	if [ -f "$(ROOT)/BOOT.INI" ]; then
 		mcopy -i "$(IMG)" "$(ROOT)/BOOT.INI" ::BOOT.INI
-	else
-		echo "warn: missing $(ROOT)/BOOT.INI - skipping copy" >&2
 	fi
-
-	echo "DOS floppy image ready: $(IMG)"
 endef
 
 floppy: $(FBOOT_BIN) $(SPARK_HEX_OPT) $(LOOM_BIN) $(BOOT_INI) $(if $(strip $(DOS_DISK)),$(DOS_IMG),)
