@@ -186,12 +186,10 @@ _start:
 	; for odd clusters, use the 12 high bits of the word.
 .odd:
 	shr ax, 4
-	jmp .next_cluster
-
 	; for even clusters, use the 12 low bits of the word.
 .even:
 	and ax, 0x0fff
-.next_cluster:
+
 	cmp ax, 0x0ff7
 	je fs_corrupt
 
