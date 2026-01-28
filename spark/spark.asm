@@ -69,13 +69,55 @@ _start:
 	print 10
 	jmp .done
 
-.ini_nf:
-	jmp $
-
 .done:
 	push cs
 	pop ds
 
+	; parse BOOT.INI ini.
+	xor si, si
+	call inip_parse
+
+	test ax, ax
+	jz .parse_failed
+
+	; find the `spark` category.
+	mov dx, str_cat_spark
+	call inip_find_category
+
+	test ax, ax
+	jz .spark_nf
+
+	; find the `boot` key under `spark`
+	mov dx, str_key_boot
+	call inip_find_entry
+
+	test ax, ax
+	jz .boot_nf
+
+	call inip_get_str
+	jz .type_mismatch
+
+	; TODO convert to 83 and boot it.
+	jmp $
+
+.ini_nf:
+	print 'BOOT.INI not found', 10
+	jmp $
+
+.parse_failed:
+	print 'INI Parse Error', 10
+	jmp $
+
+.spark_nf:
+	print 'Category [spark] not found', 10
+	jmp $
+
+.boot_nf:
+	print 'Key "boot" not found', 10
+	jmp $
+
+.type_mismatch:
+	print 'Key "boot" is not a string', 10
 	jmp $
 
 include 'source16/print.asm'
@@ -84,6 +126,10 @@ include 'source16/arena.asm'
 include 'source16/disk.asm'
 include 'source16/volume.asm'
 include 'source16/fat12.asm'
+include 'source16/ini_parse.asm'
 
 str_boot_init: db 'BOOT    INI'
 loom_83: db 'LOOM    BIN'
+
+str_cat_spark: db 'spark', 0
+str_key_boot: db 'boot', 0
