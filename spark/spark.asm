@@ -26,10 +26,7 @@ _start:
 
 	loop .mbr_print_loop
 
-	mov ax, 13
-	call print_char16
-	mov ax, 10
-	call print_char16
+	print_endl
 
 	call fat12_init
 
@@ -97,7 +94,18 @@ _start:
 	call inip_get_str
 	jz .type_mismatch
 
-	; TODO convert to 83 and boot it.
+	mov si, ax
+	lea di, [loom_83]
+	call fat12_period_to_83
+
+	print_endl
+
+	lea si, [loom_83]
+	mov cx, 11
+	call print_str16
+
+	print_endl
+
 	jmp $
 
 .ini_nf:

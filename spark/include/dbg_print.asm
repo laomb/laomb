@@ -220,3 +220,14 @@ macro print items&
 		end iterate
 	end if
 end macro
+
+macro print_endl
+	push ax
+
+	mov ax, 13
+	call print_char16
+	mov ax, 10
+	call print_char16
+	
+	pop ax
+end macro

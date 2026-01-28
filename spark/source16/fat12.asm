@@ -296,6 +296,83 @@ fat12_read_file:
 	popa
 	ret
 
+; [in] SI = pointer to null-terminated source filename
+; [in] DI = pointer to 11-byte destination buffer
+fat12_period_to_83:
+	pusha
+
+	; clear the destination buffer.
+	push di
+	mov bx, 11
+	mov al, 0x20
+	rep stosb
+	pop di
+
+	xor bx, bx
+.copy_name:
+	lodsb
+
+	test al, al
+	jz .done
+
+	cmp al, '.'
+	je .handle_extension
+
+	call .to_upper
+
+	cmp bx, 8
+	jae .consume_name_loop
+
+	mov byte [di + bx], al
+	inc bx
+
+	jmp .copy_name
+
+.consume_name_loop:
+	lodsb
+
+	test al, al
+	jz .done
+
+	cmp al, '.'
+	je .handle_extension
+
+	jmp .consume_name_loop
+
+.handle_extension:
+	add di, 8
+	xor bx, bx
+.copy_ext:
+	lodsb
+
+	test al, al
+	jz .done
+
+	cmp bx, 3
+	jae .done
+
+	call .to_upper
+
+	mov [di + bx], al
+	inc bx
+
+	jmp .copy_ext
+
+.done:
+	popa
+	ret
+
+.to_upper:
+	cmp al, 'a'
+	jb .ret
+
+	cmp al, 'z'
+	ja .ret
+
+	sub al, 0x20
+.ret:
+	ret
+
 	; report filesystem corruption to the user.
 corrupted_filesystem:
 	mov si, str_corrupted_fs
