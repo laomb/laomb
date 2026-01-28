@@ -3,20 +3,20 @@ INIP_TYPE_NULL = 0
 INIP_TYPE_IDENT = 1
 INIP_TYPE_NUMBER = 2
 
-struct inip_entry
-	key: dw ?
-	type: dw ?
+struct IniEntry
+	key 		dw ?
+	type 		dw ?
 
 	ident:
-	number: dd ?
+	number 		dd ?
 
-	next: dw ?
+	next 		dw ?
 end struct
 
-struct inip_category
-	name: dw ?
-	entries: dw ?
-	next: dw ?
+struct IniCategory
+	name 		dw ?
+	entries 	dw ?
+	next 		dw ?
 end struct
 
 macro inip_isalpha_
@@ -197,21 +197,21 @@ inip_extract_string:
 	ret
 
 ; [in] ES:SI = raw ini source
-; [out] AX = pointer to root inip_category
+; [out] AX = pointer to root IniCategory
 inip_parse:
 	push bx cx dx di
 
 	; allocate the initial category.
-	mov ax, sizeof.inip_category
+	mov ax, sizeof.IniCategory
 	call arena_alloc16
 	test ax, ax
 	jz .error_oom
 
 	; initialize the current category pointer.
 	mov bx, ax
-	mov word [bx + inip_category.name], 0
-	mov word [bx + inip_category.entries], 0
-	mov word [bx + inip_category.next], 0
+	mov word [bx + IniCategory.name], 0
+	mov word [bx + IniCategory.entries], 0
+	mov word [bx + IniCategory.next], 0
 
 	; save the current category pointer.
 	push bx
@@ -267,7 +267,7 @@ inip_parse:
 	inc si
 
 	; allocate new cateogry.
-	mov ax, sizeof.inip_category
+	mov ax, sizeof.IniCategory
 	call arena_alloc16
 	test ax, ax
 	jz .error_oom
@@ -275,15 +275,15 @@ inip_parse:
 	mov dx, ax
 
 	; link new entry into the old one.
-	mov [bx + inip_category.next], dx
+	mov [bx + IniCategory.next], dx
 	mov bx, dx
 
 	; zero out the new category.
-	mov word [bx + inip_category.entries], 0
-	mov word [bx + inip_category.next], 0
+	mov word [bx + IniCategory.entries], 0
+	mov word [bx + IniCategory.next], 0
 
 	call inip_extract_string
-	mov [bx + inip_category.name], ax
+	mov [bx + IniCategory.name], ax
 
 	; skip closing bracket if present.
 	mov al, byte [es:si]
@@ -297,7 +297,7 @@ inip_parse:
 	push bx
 
 	; allocate an entry.
-	mov ax, sizeof.inip_entry
+	mov ax, sizeof.IniEntry
 	call arena_alloc16
 	test ax, ax
 	jz .error_oom_entry
@@ -305,15 +305,15 @@ inip_parse:
 	mov di, ax
 
 	; prepare the entry state and link it into the category. 
-	mov cx, word [bx + inip_category.entries]
-	mov word [di + inip_entry.next], cx
-	mov word [bx + inip_category.entries], di
+	mov cx, word [bx + IniCategory.entries]
+	mov word [di + IniEntry.next], cx
+	mov word [bx + IniCategory.entries], di
 
 	mov bx, di
 
 	; parse key.
 	call inip_extract_string
-	mov word [bx + inip_entry.key], ax
+	mov word [bx + IniEntry.key], ax
 
 	call inip_skip_ws
 
@@ -338,8 +338,8 @@ inip_parse:
 	ja .val_ident
 
 	call inip_parse_number
-	mov word [bx + inip_entry.type], INIP_TYPE_NUMBER
-	mov dword [bx + inip_entry.number], eax
+	mov word [bx + IniEntry.type], INIP_TYPE_NUMBER
+	mov dword [bx + IniEntry.number], eax
 	jmp .entry_done
 
 .val_quoted:
@@ -353,8 +353,8 @@ inip_parse:
 
 	; fill in the identifier data.
 	movzx eax, di
-	mov dword [bx + inip_entry.ident], eax
-	mov word [bx + inip_entry.type], INIP_TYPE_IDENT
+	mov dword [bx + IniEntry.ident], eax
+	mov word [bx + IniEntry.type], INIP_TYPE_IDENT
 .quote_loop:
 	mov al, byte [es:si]
 	test al, al
@@ -392,8 +392,8 @@ inip_parse:
 .val_ident:
 	call inip_extract_string
 	movzx eax, ax
-	mov dword [bx + inip_entry.ident], eax
-	mov word [bx + inip_entry.type], INIP_TYPE_IDENT
+	mov dword [bx + IniEntry.ident], eax
+	mov word [bx + IniEntry.type], INIP_TYPE_IDENT
 
 	jmp .entry_done
 
@@ -443,7 +443,7 @@ inip_strcmp:
 
 ; [in] AX = root category pointer
 ; [in] DX = name string pointer
-; [out] AX = pointer to inip_category
+; [out] AX = pointer to IniCategory
 inip_find_category:
 	push bx si di
 
@@ -453,7 +453,7 @@ inip_find_category:
 	jz .not_found
 
 	; load the category name.
-	mov si, word [bx + inip_category.name]
+	mov si, word [bx + IniCategory.name]
 	mov di, dx
 
 	test si, si
@@ -472,7 +472,7 @@ inip_find_category:
 	jz .found
 
 .next:
-	mov bx, word [bx + inip_category.next]
+	mov bx, word [bx + IniCategory.next]
 	jmp .loop
 
 .found:
@@ -487,23 +487,23 @@ inip_find_category:
 
 ; [in] AX = category pointer
 ; [in] DX = key string pointer
-; [out] AX = pointer to inip_entry, or 0 if not found
+; [out] AX = pointer to IniEntry, or 0 if not found
 inip_find_entry:
 	push bx si di
 
 	mov di, ax
-	mov bx, word [di + inip_category.entries]
+	mov bx, word [di + IniCategory.entries]
 .loop:
 	test bx, bx
 	jz .not_found
 
-	mov si, word [bx + inip_entry.key]
+	mov si, word [bx + IniEntry.key]
 	mov di, dx
 	
 	call inip_strcmp
 	je .found
 
-	mov bx, word [bx + inip_entry.next]
+	mov bx, word [bx + IniEntry.next]
 	jmp .loop
 
 .found:
@@ -526,10 +526,10 @@ inip_get_int:
 	push bx
 	mov bx, ax
 
-	cmp word [bx + inip_entry.type], INIP_TYPE_NUMBER
+	cmp word [bx + IniEntry.type], INIP_TYPE_NUMBER
 	jne .fail_type
 
-	mov eax, dword [bx + inip_entry.number]
+	mov eax, dword [bx + IniEntry.number]
 
 	pop bx
 	or sp, sp
@@ -552,10 +552,10 @@ inip_get_str:
 	push bx
 	mov bx, ax
 
-	cmp word [bx + inip_entry.type], INIP_TYPE_IDENT
+	cmp word [bx + IniEntry.type], INIP_TYPE_IDENT
 	jne .fail_type
 
-	mov ax, word [bx + inip_entry.ident]
+	mov ax, word [bx + IniEntry.ident]
 
 	pop bx
 	or sp, sp
