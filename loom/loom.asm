@@ -1,4 +1,5 @@
 format lbf bin 8192
+use32
 
 ; tests for format/lbf.asm
 
@@ -6,8 +7,7 @@ segment 'TEXT', ST_CODE_RX, SF_SHAREABLE
 
 entry _start
 _start:
-	mov ax, 0 
-	reloc RELOC_SEL16, 'RESRC'
+	mov ax, rel 'RESRC'
 	mov es, ax
 	mov al, byte [es:ascii]
 

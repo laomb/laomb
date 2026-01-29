@@ -119,11 +119,45 @@ macro export name*, label*
 	end repeat
 end macro
 
+calminstruction __x86_mov? dest*, src*
+	call mov, dest, src
+end calminstruction
+
+calminstruction mov? dest*, src*
+	local target, cmd
+
+	match =rel? target, src
+	jyes handling_reloc
+
+	call __x86_mov, dest, src
+	exit
+
+handling_reloc:
+	call x86.parse_operand@dest, dest
+	check @dest.type = 'reg' & @dest.size = 2
+	jno invalid_operand
+
+	check x86.mode = 16
+    jyes no_prefix
+
+    emit 1, 0x66
+no_prefix:
+	emit 1, 0xB8 + @dest.rm
+
+	arrange cmd, =reloc =RELOC_SEL16, target
+	assemble cmd
+	exit
+
+invalid_operand:
+	err "invalid operand size; Segment relocation is 16-bit"
+	exit
+end calminstruction
+
 macro reloc type*, target*
 	local _tgt_idx
 
 	if LBF.seg_count = 0
-		err "Relocation must be inside a segment"
+		err "relocation must be inside a segment"
 	end if
 
 	eval 'if defined LBF_SEG_IDX_', target
@@ -144,7 +178,7 @@ macro reloc type*, target*
 	if type eq RELOC_SEL16
 		dw 0
 	else
-		dd 0
+		err "unkown relocation type"
 	end if
 end macro
 
