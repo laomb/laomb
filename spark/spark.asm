@@ -13,6 +13,12 @@ _start:
 	call serial_init
 	call disk_init
 	call gather_entropy
+	call memmap_init
+
+	mov ax, si
+	call print_hex16_16
+
+	print ' memory entries', 10
 
 	unsafe_read_disk 0, 1, 0xd000
 
@@ -158,6 +164,7 @@ include 'source16/volume.asm'
 include 'source16/fat12.asm'
 include 'source16/ini_parse.asm'
 include 'source16/rand.asm'
+include 'source16/memmap.asm'
 
 include 'sourceur/unreal.asm'
 include 'sourceur/loader.asm'
