@@ -1,6 +1,7 @@
 include 'fasm2/p5.asm'
 include '@@.asm'
 include 'struct.asm'
+include 'format.asm'
 
 build.mode.Debug = 1
 build.mode.Release = 2
