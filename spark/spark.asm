@@ -168,7 +168,6 @@ include 'source16/memmap.asm'
 
 include 'sourceur/unreal.asm'
 include 'sourceur/loader.asm'
-include 'sourceur/rand.asm'
 
 str_boot_init: db 'BOOT    INI'
 loom_83: db 'LOOM    BIN'
