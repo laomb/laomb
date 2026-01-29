@@ -81,3 +81,14 @@ print_hex16_16:
 
 	pop bx ax
 	ret
+
+print_hex32_16:
+	push eax
+
+	shr eax, 16
+	call print_hex16_16
+
+	pop eax
+	call print_hex16_16
+
+	ret

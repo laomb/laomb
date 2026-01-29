@@ -67,6 +67,19 @@ macro __print_reg16 r*
 	end match
 end macro
 
+macro __print_reg32 r*
+	match =eax, r
+		call print_hex32_16
+	else
+		push eax
+
+		mov eax, r
+		call print_hex32_16
+
+		pop eax
+	end match
+end macro
+
 macro __print_mem_char mexpr&
 	push ax
 
@@ -91,6 +104,13 @@ macro __print_mem_sz sz*, mexpr&
 		call print_hex16_16
 
 		pop ax
+	else if sz eq dword
+		push eax
+
+		mov eax, dword [mexpr]
+		call print_hex32_16
+
+		pop eax
 	else
 		err 'unsupported size in __print_mem_sz'
 	end if
@@ -175,6 +195,31 @@ macro __print_one a&
 			__done = 1
 		else match =ss, a
 			__print_reg16 ss
+			__done = 1
+		end match
+	end if
+
+	if __done = 0
+		match =eax, a
+			__print_reg32 eax
+			__done = 1
+		else match =ebx, a
+			__print_reg32 ebx
+			__done = 1
+		else match =ecx, a
+			__print_reg32 ecx
+			__done = 1
+		else match =edx, a
+			__print_reg32 edx
+			__done = 1
+		else match =esi, a
+			__print_reg32 esi
+			__done = 1
+		else match =edi, a
+			__print_reg32 edi
+			__done = 1
+		else match =ebp, a
+			__print_reg32 ebp
 			__done = 1
 		end match
 	end if
