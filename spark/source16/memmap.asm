@@ -25,6 +25,8 @@ memmap_init:
 	test ebx, ebx
 	jnz .loop
 
+	mov [memmap_entry_count], si
+
 	ret
 
 .error_int:
@@ -34,3 +36,5 @@ memmap_init:
 .error_magic:
 	print 'Invalid magic number', 10
 	jmp $
+
+memmap_entry_count: dw 0
