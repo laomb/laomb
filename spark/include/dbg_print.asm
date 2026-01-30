@@ -84,7 +84,7 @@ macro __print_mem_char mexpr&
 	push ax
 
 	mov al, byte [mexpr]
-	call print_char_rmode
+	call print_char16
 
 	pop ax
 end macro
@@ -114,6 +114,47 @@ macro __print_mem_sz sz*, mexpr&
 	else
 		err 'unsupported size in __print_mem_sz'
 	end if
+end macro
+
+macro __print_cstr_arg len*, p1&
+	local __pcl_loop, __pcl_done
+	push ax cx si
+	
+	match [m], p1
+		lea si, [m]
+	else
+		mov si, p1
+	end match
+	mov cx, len
+	jcxz __pcl_done
+__pcl_loop:
+	lodsb
+	call print_char16
+
+	loop __pcl_loop
+__pcl_done:
+	pop si cx ax
+end macro
+
+macro __print_cstr_null p1&
+	local __pcl_loop, __pcl_done
+	push ax si
+	
+	match [m], p1
+		lea si, [m]
+	else
+		mov si, p1
+	end match
+__pcl_loop:
+	lodsb
+	test al, al
+	jz __pcl_done
+
+	call print_char16
+
+	jmp __pcl_loop
+__pcl_done:
+	pop si ax
 end macro
 
 macro __print_cstr lb*, sz*
@@ -221,6 +262,18 @@ macro __print_one a&
 		else match =ebp, a
 			__print_reg32 ebp
 			__done = 1
+		end match
+	end if
+
+	if __done = 0
+		match =!cstr (__cargs), a
+			match p1 =| p2, __cargs
+				__print_cstr_arg p2, p1
+				__done = 1
+			else match p2, __cargs
+				__print_cstr_null p2
+				__done = 1
+			end match
 		end match
 	end if
 
