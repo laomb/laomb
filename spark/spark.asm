@@ -77,6 +77,9 @@ _start:
 	push cs
 	pop ds
 
+	call arena_mark16
+	push ax
+
 	; parse BOOT.INI ini.
 	xor si, si
 	call inip_parse
@@ -112,6 +115,9 @@ _start:
 	call print_str16
 
 	print_endl
+
+	pop ax
+	call arena_rewind16
 
 	lea si, [loom_83]
 	call fat12_find_file
