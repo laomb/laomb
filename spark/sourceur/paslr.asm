@@ -28,6 +28,9 @@ find_nth_page_in_region:
 		test edx, edx
 		jz .end
 
+		cmp edx, ebx
+		jb .region_too_small
+
 		dec eax
 		test eax, eax
 		jnz .loop
@@ -35,8 +38,14 @@ find_nth_page_in_region:
 	.end:
 		ret
 
+.region_too_small:
+	print 'PASLR: Region too small', 10
+	print '       TODO', 10
+
+	jmp $
 
 ; [in] eax - random number
+; [in] ebx - minimum required size
 ; [out] eax - base
 paslr_find_usable:
 	mov edi, e820_buffer
