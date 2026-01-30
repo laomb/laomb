@@ -13,7 +13,7 @@ _start:
 
 	call far [exit_process]
 
-	call func
+	; call func
 
 	ret
 
@@ -26,10 +26,10 @@ segment 'RESRC', ST_DATA_RO
 
 ascii: db "¯\_(ツ)_/¯", 0
 
-segment 'TEXT', ST_CODE_RX
+; segment 'TEXT', ST_CODE_RX
 
-func:
-	ret
+; func:
+	; ret
 
 export 'MainEntry', _start
 import 'loom.bin', 'exit_process'

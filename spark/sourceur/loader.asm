@@ -130,7 +130,8 @@ ldr_alloc_stack:
 	print '[LDR] allocating stack from ', ebx, 10
 	print '[LDR]                  size ', eax, 10
 
-	mov [stack_segment], ebx
+	mov [stack_rw], ebx
+	mov [stack_rw + 4], eax
 	add [loom_offset], eax
 
 	ret
@@ -203,7 +204,16 @@ ldr_parse_segments:
 		push ecx
 		mov ecx, [loom_offset]
 		mov [eax], ecx
+		print '[LDR] mem offset = ', ecx, 10
+
 		mov ecx, [edx + 12] ; mem size
+		test ecx, 0xFFF
+		jz .mem_size_aligned
+
+		and ecx, 0xFFFFF000
+		add ecx, 0x1000
+
+	.mem_size_aligned:
 		print '[LDR] mem size = ', ecx, 10
 		mov [eax + 4], ecx
 		add [loom_offset], ecx
@@ -235,6 +245,75 @@ ldr_parse_segments:
 	call print_str
 
 	jmp $
+
+; TODO SIMD, move this to a different file
+; [in] ecx - destination
+; [in] edx - size
+zero_memory:
+
+	push ecx edx
+
+	.loop:
+		mov byte [ecx], 0
+
+		inc ecx
+		dec edx
+		jnz .loop
+
+	pop edx ecx
+
+	ret
+
+
+; TODO SIMD, move this to a different file
+; [in] ebx - source
+; [in] ecx - destination
+; [in] edx - size
+copy_memory:
+	push eax ebx ecx edx
+	.loop:
+		mov al, [edx]
+		mov [ecx], al
+
+		inc edx
+		inc ecx
+		dec edx
+		jnz .loop
+
+	pop edx ecx ebx eax
+
+	ret
+
+
+; [in] eax = pointer to segment info global
+ldr_copy_segment:
+	mov ecx, [eax]
+	test ecx, ecx
+	jz .exit
+
+	add ecx, [loom_base]
+
+	mov ebx, [eax + 8]
+	add ebx, [loom_bounce_buffer_offset]
+
+	mov edx, [eax + 12] ; copy on disk size
+	call copy_memory
+
+.exit:
+
+	ret
+
+ldr_copy_segments:
+	mov eax, code_rx
+	call ldr_copy_segment
+
+	mov eax, data_rw
+	call ldr_copy_segment
+
+	mov eax, data_ro
+	call ldr_copy_segment
+
+	ret
 
 ; [in] edx = pointer to LBF 
 ; [out] ZF = 1 -> magic number valid
@@ -269,6 +348,7 @@ ldr_load_loom:
 	call ldr_alloc_stack
 	call ldr_print_segments
 	call ldr_parse_segments
+	call ldr_copy_segments
 
 	print 'Loading loom...', 10
     jmp $
