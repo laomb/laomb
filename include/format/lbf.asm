@@ -16,6 +16,7 @@ SF_RESERVED = 0xFFFC
 
 RELOC_SEL16 = 0x1
 
+LBF.cur_seg = -1
 LBF.seg_count = 0
 LBF.mod_count = 0
 LBF.exp_count = 0
@@ -45,22 +46,42 @@ macro LBF_AddString text, ret_offset
 end macro
 
 macro segment name*, type*, flags:0, align:16
-	if LBF.seg_count > 0
-		local _size
+	local _found, _is_new, _size
+
+	if LBF.cur_seg >= 0
 		_size:
 
-		repeat 1, num:LBF.seg_count
+		repeat 1, num:LBF.cur_seg + 1
 			load LBF.seg.data_#num : _size from 0
 			LBF.seg.size_#num = _size
+			LBF.seg.init_#num = 1
 		end repeat
 
 		end virtual
 	end if
 
-	LBF.seg_count = LBF.seg_count + 1
-	eval 'LBF_SEG_IDX_', name, ' = LBF.seg_count - 1'
+	_found = 0
+	repeat LBF.seg_count, i:1
+		match =name, LBF.seg.name_#i
+			_found = i
+		end match
+	end repeat
 
-	repeat 1, num:LBF.seg_count
+	_is_new = 0
+	if _found = 0
+		LBF.seg_count = LBF.seg_count + 1
+		_found = LBF.seg_count
+		_is_new = 1
+		eval 'LBF_SEG_IDX_', name, ' = _found - 1'
+	end if
+
+	LBF.cur_seg = _found - 1
+
+	repeat 1, num:_found
+		if _is_new
+			LBF.seg.init_#num = 0
+		end if
+
 		LBF.seg.name_#num equ name
 		LBF.seg.type_#num = type
 		LBF.seg.flag_#num = flags
@@ -68,15 +89,28 @@ macro segment name*, type*, flags:0, align:16
 	end repeat
 
 	virtual at 0
+		repeat 1, num:_found
+			if LBF.seg.init_#num
+				db LBF.seg.data_#num
+			end if
+		end repeat
 end macro
 
 macro entry label*
-	LBF.entry_seg = LBF.seg_count - 1
+	if LBF.cur_seg < 0
+		err "entry must be inside a segment"
+	end if
+
+	LBF.entry_seg = LBF.cur_seg
 	LBF.entry_off = label
 end macro
 
 macro data_segment
-	LBF.data_seg = LBF.seg_count - 1
+	if LBF.cur_seg < 0
+		err "data_segment must be inside a segment"
+	end if
+
+	LBF.data_seg = LBF.cur_seg
 end macro
 
 macro import module*, func*
@@ -110,12 +144,16 @@ macro import module*, func*
 	end repeat
 end macro
 
-macro export name*, label*
-	LBF.exp_count = LBF.exp_count + 1
 
+macro export name*, label*
+	if LBF.cur_seg < 0
+		err "export must be inside a segment"
+	end if
+
+	LBF.exp_count = LBF.exp_count + 1
 	repeat 1, num:LBF.exp_count
 		LBF.exp.name_#num equ name
-		LBF.exp.seg_#num = LBF.seg_count - 1
+		LBF.exp.seg_#num = LBF.cur_seg
 		LBF.exp.off_#num = label
 	end repeat
 end macro
@@ -139,9 +177,9 @@ handling_reloc:
 	jno invalid_operand
 
 	check x86.mode = 16
-    jyes no_prefix
+	jyes no_prefix
 
-    emit 1, 0x66
+	emit 1, 0x66
 no_prefix:
 	emit 1, 0xB8 + @dest.rm
 
@@ -157,7 +195,7 @@ end calminstruction
 macro reloc type*, target*
 	local _tgt_idx
 
-	if LBF.seg_count = 0
+	if LBF.cur_seg < 0
 		err "relocation must be inside a segment"
 	end if
 
@@ -168,9 +206,8 @@ macro reloc type*, target*
 	end if
 
 	LBF.rel_count = LBF.rel_count + 1
-
 	repeat 1, num:LBF.rel_count
-		LBF.rel.src_seg_#num = LBF.seg_count - 1
+		LBF.rel.src_seg_#num = LBF.cur_seg
 		LBF.rel.src_off_#num:
 		LBF.rel.tgt_seg_#num = _tgt_idx
 		LBF.rel.type_#num = type
