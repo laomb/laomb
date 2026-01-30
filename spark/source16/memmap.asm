@@ -1,18 +1,20 @@
+define SMAP_MAGIC 0x534D4150
+
 ; [out] SI = number of entries
 memmap_init:
 	xor si, si
 	xor ebx, ebx
-	mov di, 0xf000
+	mov edi, e820_buffer
 .loop:
 	inc si
 	mov eax, 0xE820
 	mov ecx, 20 ; TODO can increase
-	mov edx, 0x534D4150
+	mov edx, SMAP_MAGIC
 
 	int 0x15
 
 	jc .error_int
-	cmp eax, 0x534D4150
+	cmp eax, SMAP_MAGIC
 	jne .error_magic
 
 	add di, cx
