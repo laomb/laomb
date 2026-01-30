@@ -13,64 +13,23 @@ _start:
 	call serial_init
 	call disk_init
 	call gather_entropy
-
-	unsafe_read_disk 0, 1, 0xd000
-
-	mov cx, 512
-	mov si, 0xd000
-.mbr_print_loop:
-	lodsb
-	call print_hex8_16
-
-	mov al, ' '
-	call print_char16
-
-	loop .mbr_print_loop
-
-	print_endl
-
 	call fat12_init
 
 	mov si, str_boot_init
 	call fat12_find_file
 	jc .ini_nf
 
-	push ebx
-
 	mov si, str_boot_init
 	xor ecx, ecx
 
+	; load boot.ini to 0x6000:0x0000 to save precious space in the first 64KiB.
 	mov di, 0x6000
 	mov es, di
 	xor di, di
-
 	call fat12_read_file
 	jc .ini_nf
 
-	print 10, '      BOOT INIT', 10
-	print '--------------------', 10
-
-	xor si, si
-	pop ecx
-
-	test cx, cx
-	jz .done
-
-	push es
-	pop ds
-.boot_ini_print_loop:
-	lodsb
-	call print_char16
-
-	loop .boot_ini_print_loop
-
-	print 10
-	jmp .done
-
-.done:
-	push cs
-	pop ds
-
+	; snapshop allocations to be able to free the INI database.
 	call arena_mark16
 	push ax
 
@@ -95,24 +54,21 @@ _start:
 	test ax, ax
 	jz .boot_nf
 
+	; attempt to read the value as a string/identifier.
 	call inip_get_str
 	jz .type_mismatch
 
+	; convert the parser boot entry into an 83 name.
 	mov si, ax
 	lea di, [loom_83]
 	call fat12_period_to_83
 
-	print_endl
-
-	lea si, [loom_83]
-	mov cx, 11
-	call print_str16
-
-	print_endl
-
+	; free the ini database.
 	pop ax
 	call arena_rewind16
 
+.boot_laomb:
+	; attempt to load resolved loom.
 	lea si, [loom_83]
 	call fat12_find_file
 	jc .loom_nf
@@ -128,28 +84,35 @@ _start:
 
 	jmp ur_bootstrap
 
+.wk_boot_laomb:
+	; GET KEYSTROKE
+	xor ah, ah
+	int 0x16
+
+	jmp .boot_laomb
+
 .ini_nf:
-	print 'BOOT.INI not found', 10
-	jmp $
+	print 'BOOT.INI not found', 10, 'Press any key to boot LAOMB', 10
+	jmp .wk_boot_laomb
 
 .parse_failed:
-	print 'INI Parse Error', 10
-	jmp $
+	print 'INI parse error', 10, 'Press any key to boot LAOMB', 10
+	jmp .wk_boot_laomb
 
 .spark_nf:
-	print 'Category [spark] not found', 10
-	jmp $
+	print 'Category [spark] not found', 10, 'Press any key to boot LAOMB', 10
+	jmp .wk_boot_laomb
 
 .boot_nf:
-	print 'Key "boot" not found', 10
-	jmp $
+	print 'Key "boot" not found', 10, 'Press any key to boot LAOMB', 10
+	jmp .wk_boot_laomb
 
 .type_mismatch:
-	print 'Key "boot" is not a string', 10
-	jmp $
+	print 'Key "boot" is not a string', 10, 'Press any key to boot LAOMB', 10
+	jmp .wk_boot_laomb
 
 .loom_nf:
-	print 'Error: Loom file not found on disk', 10
+	print 'Error: Loom file "', !cstr( [loom_83] | 11 ) ,'" not found on disk', 10
 	jmp $
 
 .loom_read_err:
