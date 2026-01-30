@@ -26,27 +26,28 @@ LBF.entry_off = 0
 LBF.data_seg = 0
 LBF.header_flags = LBF_TYPE_BIN
 
-LBF.str_blob equ ""
-LBF.str_size = 1
+LBF.string_pos = 1
+virtual at 0
+	LBFStringBlob:: rb LBF.string_size
+end virtual
+store 0 at LBFStringBlob:0
 
 macro LBF_AddString text, ret_offset
-	ret_offset = LBF.str_size
+	local __str
 
-	local content
-	content equ text
+	ret_offset = LBF.string_pos
+	__str equ text
 
-	LBF.str_blob equ LBF.str_blob, content, 0
-
-	virtual at 0
-		db content
-		LBF.str_size = LBF.str_size + $ + 1
-	end virtual
+	store __str : lengthof (string __str) at LBFStringBlob:LBF.string_pos
+	LBF.string_pos = LBF.string_pos + lengthof (string __str)
+	store 0 at LBFStringBlob:LBF.string_pos
+	LBF.string_pos = LBF.string_pos + 1
 end macro
 
 macro segment name*, type*, flags:0, align:16
 	if LBF.seg_count > 0
 		local _size
-		_size = $
+		_size:
 
 		repeat 1, num:LBF.seg_count
 			load LBF.seg.data_#num : _size from 0
@@ -170,7 +171,7 @@ macro reloc type*, target*
 
 	repeat 1, num:LBF.rel_count
 		LBF.rel.src_seg_#num = LBF.seg_count - 1
-		LBF.rel.src_off_#num = $
+		LBF.rel.src_off_#num:
 		LBF.rel.tgt_seg_#num = _tgt_idx
 		LBF.rel.type_#num = type
 	end repeat
@@ -184,7 +185,7 @@ end macro
 
 postpone
 	if LBF.seg_count > 0
-		_size = $
+		_size:
 
 		repeat 1, num:LBF.seg_count
 			load LBF.seg.data_#num : _size from 0
@@ -238,9 +239,7 @@ postpone
 	end if
 
 	$ = ($ + 3) and (not 3)
-	_rva_strings = $
-
-	db 0
+	_rva_strings:
 
 	LBF_AddString 'SEGMENT', _off_str_seg
 	LBF_AddString 'IMPORT', _off_str_imp
@@ -263,10 +262,12 @@ postpone
 		end repeat
 	end repeat
 
-	db LBF.str_blob
+	LBF.string_size := LBF.string_pos
+	load __strbytes : LBF.string_size from LBFStringBlob:0
+	db __strbytes
 
 	$ = ($ + 3) and (not 3)
-	_rva_dir_seg = $
+	_rva_dir_seg:
 	
 	dd LBF.seg_count
 	
@@ -282,7 +283,7 @@ postpone
 
 	if LBF.mod_count > 0
 		$ = ($ + 3) and (not 3)
-		_rva_dir_imp = $
+		_rva_dir_imp:
 
 		dd LBF.mod_count
 
@@ -294,7 +295,7 @@ postpone
 
 		repeat LBF.mod_count, mod_idx:1
 			$ = ($ + 3) and (not 3)
-			_rva_ilt_#mod_idx = $
+			_rva_ilt_#mod_idx:
 			
 			repeat LBF.mod.func_count_#mod_idx, func_idx:1
 				dd LBF.mod.func_off_#mod_idx#_#func_idx
@@ -302,10 +303,10 @@ postpone
 			dd 0
 
 			$ = ($ + 3) and (not 3)
-			_rva_ipt_#mod_idx = $
+			_rva_ipt_#mod_idx:
 
 			repeat LBF.mod.func_count_#mod_idx, func_idx:1
-				_ipt_entry_#mod_idx#_#func_idx = $ 
+				_ipt_entry_#mod_idx#_#func_idx: 
 
 				dd 0
 				dw 0
@@ -318,7 +319,7 @@ postpone
 
 	if LBF.exp_count > 0
 		$ = ($ + 3) and (not 3)
-		_rva_dir_exp = $
+		_rva_dir_exp:
 		
 		dd LBF.exp_count
 
@@ -331,7 +332,7 @@ postpone
 
 	if LBF.rel_count > 0
 		$ = ($ + 3) and (not 3)
-		_rva_dir_rel = $
+		_rva_dir_rel:
 		
 		dd LBF.rel_count
 
@@ -344,7 +345,7 @@ postpone
 	end if
 
 	$ = ($ + 4095) and (not 4095)
-	
+
 	repeat LBF.seg_count
 		_align = LBF.seg.align_#%
 
@@ -356,7 +357,7 @@ postpone
 			db 0
 		end while
 
-		_file_off_seg_#% = $
+		_file_off_seg_#%:
 
 		db LBF.seg.data_#%
 	end repeat
