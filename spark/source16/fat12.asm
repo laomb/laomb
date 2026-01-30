@@ -230,7 +230,7 @@ fat12_read_file:
 	pop ax
 
 	; read spc sectors for the cluster.
-	movzx bx, byte [bdb_sectors_per_cluster]
+	movzx bx, byte [bdb_sectors_per_cluster] ; TODO this is unsafe when chainbooting!
 .search_loop:
 	; no more sectors to read in current cluster?
 	test bx, bx
