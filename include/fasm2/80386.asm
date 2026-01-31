@@ -893,6 +893,9 @@ calminstruction mov? dest*,src*
 		jno no_sp_case
 
 	_sp_case:
+		match seg:off, v
+		jyes no_sp_case
+
 		check v eq 1 elementof v
 		jno no_sp_case
 
