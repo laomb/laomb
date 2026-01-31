@@ -7,11 +7,16 @@ segment 'TEXT', ST_CODE_RX, SF_SHAREABLE
 
 entry _start
 _start:
-	mov ax, rel 'RESRC'
-	mov es, ax
-	mov al, byte [es:ascii]
+	mov al, ':'
+	out 0xE9, al
+	mov al, ')'
+	out 0xE9, al
+	jmp $
+	;mov ax, rel 'RESRC'
+	;mov es, ax
+	;mov al, byte [es:ascii]
 
-	call far [exit_process]
+	;call far [exit_process]
 
 	; call func
 

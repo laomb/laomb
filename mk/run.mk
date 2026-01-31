@@ -31,7 +31,7 @@ define qemu_run_floppy
 		-netdev "user,id=net0,hostfwd=tcp::2222-:22" \
 		--no-reboot \
 		--no-shutdown \
-		-serial stdio \
+		-debugcon stdio \
 		-d "int,guest_errors" \
 		-M "pc-i440fx-7.2,acpi=off,accel=tcg,smm=off" \
 		-D "$(QEMU_LOG)"

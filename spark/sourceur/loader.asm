@@ -130,127 +130,16 @@ ldr_alloc_stack:
 	print '[LDR] allocating stack from ', ebx, 10
 	print '[LDR]                  size ', eax, 10
 
-	mov [stack_rw], ebx
-	mov [stack_rw + 4], eax
+	;mov [stack_rw], ebx
+	;mov [stack_rw + 4], eax
 	add [loom_offset], eax
 
 	ret
-
-; [in] eax = segment type
-; [out] eax = pointer to segment info (global)
-get_seg_ptr_from_type:
-
-	cmp eax, ST_CODE_RX
-	jne .next1
-	
-	mov eax, code_rx
-	ret
-
-.next1:
-	cmp eax, ST_DATA_RW
-	jne .next2
-
-	mov eax, data_rw
-	ret
-
-.next2:
-	cmp eax, ST_DATA_RO
-	jne .next3
-
-	mov eax, data_ro
-	ret
-
-.next3:
-
-	cmp eax, ST_STACK_RW
-	jne .next4
-
-	print 'Segment type cant be ST_STACK_RW', 10
-	jmp $
-
-.next4:
-	print 'Invalid segment type ', eax, 10
-	jmp $
-
-	ret
-
-; [in] edi = pointer to LBF
-; [in] esi = pointer to segment header
-; [out] writes to the segment globals at the bottom of this file
-ldr_parse_segments:
-
-	print '[LDR] Loading segments', 10
-
-	mov ecx, [esi] ; count
-	lea edx, [esi + 4]
-
-	.loop:
-
-		mov eax, [edx + 16] ; segment type
-		call get_seg_ptr_from_type
-
-		mov ebx, [eax]
-		test ebx, ebx
-		jnz .already_has
-
-		; Print currently loaded name
-		push eax
-		print '[LDR] Loading '
-		mov eax, [edx]
-		call ldr_get_string_by_offset
-		call print_str
-		pop eax
-
-		push ecx
-		mov ecx, [loom_offset]
-		mov [eax], ecx
-		print '[LDR] mem offset = ', ecx, 10
-
-		mov ecx, [edx + 12] ; mem size
-		test ecx, 0xFFF
-		jz .mem_size_aligned
-
-		and ecx, 0xFFFFF000
-		add ecx, 0x1000
-
-	.mem_size_aligned:
-		print '[LDR] mem size = ', ecx, 10
-		mov [eax + 4], ecx
-		add [loom_offset], ecx
-
-		mov ecx, [edx + 4] ; file rva
-		print '[LDR] on disk rva = ', ecx, 10
-		mov [eax + 8], ecx
-
-		mov ecx, [edx + 8] ; file size
-		print '[LDR] on disk size = ', ecx, 10
-		mov [eax + 12], ecx
-
-		pop ecx
-
-		add edx, 24
-		dec ecx
-		jnz .loop
-
-	ret
-
-.already_has:
-	print '[LDR] Duplicate segment of type '
-	mov eax, [eax + 16]
-	call print_str
-
-	print '[LDR] with name '
-	mov eax, [edx]
-	call ldr_get_string_by_offset
-	call print_str
-
-	jmp $
 
 ; TODO SIMD, move this to a different file
 ; [in] ecx - destination
 ; [in] edx - size
 zero_memory:
-
 	push ecx edx
 
 	.loop:
@@ -264,7 +153,6 @@ zero_memory:
 
 	ret
 
-
 ; TODO SIMD, move this to a different file
 ; [in] ebx - source
 ; [in] ecx - destination
@@ -272,10 +160,10 @@ zero_memory:
 copy_memory:
 	push eax ebx ecx edx
 	.loop:
-		mov al, [edx]
+		mov al, [ebx]
 		mov [ecx], al
 
-		inc edx
+		inc ebx
 		inc ecx
 		dec edx
 		jnz .loop
@@ -284,34 +172,200 @@ copy_memory:
 
 	ret
 
-
-; [in] eax = pointer to segment info global
+; [in] edx = pointer to segment header
 ldr_copy_segment:
-	mov ecx, [eax]
-	test ecx, ecx
-	jz .exit
+	push ebx ecx edx
+	mov ebx, [edx + 4]
+	add ebx, loom_bounce_buffer_flat
 
+	mov ecx, [loom_offset]
 	add ecx, [loom_base]
 
-	mov ebx, [eax + 8]
-	add ebx, [loom_bounce_buffer_offset]
-
-	mov edx, [eax + 12] ; copy on disk size
+	mov edx, [edx + 8] ; copy on disk size
 	call copy_memory
 
 .exit:
+	pop edx ecx ebx
+	ret
+
+; [in] ecx  = number of segments
+; [out] eax = pointer to gdt
+ldr_allocate_gdt:
+
+	xor eax, eax
+
+	push ecx
+
+	add ecx, 1 ; null segment
+	shl ecx, 3 ; *= descriptor size
+
+	mov ax, cx
+	print '[LDR] allocating gdt of ', ax, ' bytes', 10
+	sub ax, 1
+	mov [gdtr], ax
+	add ax, 1
+	call arena_alloc16
+
+	print '[LDR] allocated gdt: ', ax, 10
+
+	movzx ecx, ax
+	mov [gdtr + 2], ecx
+	pop ecx
 
 	ret
 
-ldr_copy_segments:
-	mov eax, code_rx
-	call ldr_copy_segment
+; [in] eax = pointer to descriptor
+; [in] ebx = limit
+ldr_gdt_write_limit:
+	mov [eax], bx
+	shr ebx, 16
 
-	mov eax, data_rw
-	call ldr_copy_segment
+	and bl, 0xF ; sanity check
 
-	mov eax, data_ro
-	call ldr_copy_segment
+	and byte [eax + 6], 0xF0
+	or [eax + 6], bl
+
+	ret
+
+; [in] ebx = pointer to the descriptor
+; [in] eax = base
+ldr_gdt_write_base:
+	mov [ebx + 2], al
+	shr eax, 8
+
+	mov [ebx + 3], al
+	shr eax, 8
+	mov [ebx + 4], al
+	shr eax, 8
+
+	mov [ebx + 7], al
+
+	ret
+
+; [in] ebx = pointer to the descriptor
+; [in] al  = access byte
+ldr_gdt_write_access:
+	mov [ebx + 5], al
+	ret
+
+; [in] ebx = pointer to the descriptor
+; [in] al  = flags
+ldr_gdt_write_flags:
+	and al, 0xF ; sanity check
+	shl al, 4
+
+	and byte [ebx + 6], 0x0F
+	or [ebx + 6], al
+
+	ret
+	
+; [in]  eax = segment type
+; [out] al  = access byte
+ldr_access_from_type:
+
+	cmp eax, ST_CODE_RX
+	jne .next1
+	
+	mov al, 0x99 ; A, E, S, P
+	ret
+	
+
+.next1:
+	cmp eax, ST_DATA_RO
+	jne .next2
+
+	mov al, 0x91 ; A, S, P
+	ret
+
+.next2:
+
+	cmp eax, ST_DATA_RW
+	jne .next3
+
+	mov al, 0x93 ; A, RW, S, P
+	ret
+
+.next3:
+	cmp eax, ST_STACK_RW
+	jne .next4
+
+	print '[LDR] ST_STACK_RW not supported', 10
+	jmp $
+
+.next4:
+	print '[LDR] invalid segment type ', eax, 10
+	jmp $
+
+	ret
+
+; [in] edi = pointer to LBF
+; [in] esi = pointer to segment header
+ldr_load_segments:
+
+	print '[LDR] Loading segments', 10
+
+	mov ecx, [esi] ; count
+	lea edx, [esi + 4]
+
+	call ldr_allocate_gdt
+	mov ebx, eax
+	push ebx
+
+	; null descriptor
+	xor eax, eax
+	mov [ebx], eax
+	mov [ebx + 4], eax
+
+	add ebx, 8
+
+	.loop:
+		push ebx
+		call ldr_copy_segment
+
+		; Print currently loaded name
+		print '[LDR] Loading '
+		mov eax, [edx]
+		call ldr_get_string_by_offset
+		call print_str
+
+		mov eax, [edx + 16] ; segment type
+		print '[LDR] gdt addr   = ', ebx, 10
+		print '[LDR] type       = ', eax, 10
+		call ldr_access_from_type
+		call ldr_gdt_write_access
+
+		mov eax, [loom_offset]
+		print '[LDR] mem offset = ', eax, 10
+		add eax, [loom_base]
+		print '[LDR] mem addr   = ', eax, 10
+
+		call ldr_gdt_write_base
+
+		mov eax, [edx + 12] ; mem size
+		test eax, 0xFFF
+		jz .mem_size_aligned
+
+		and eax, 0xFFFFF000
+		add eax, 0x1000
+
+	.mem_size_aligned:
+		print '[LDR] mem size   = ', eax, 10
+		call ldr_gdt_write_limit
+		add [loom_offset], eax
+
+		mov eax, [edx + 4] ; file rva
+		print '[LDR] disk rva   = ', eax, 10
+
+		mov eax, [edx + 8] ; file size
+		print '[LDR] disk size  = ', eax, 10
+
+		add edx, 24
+		pop ebx
+		add ebx, 8
+		dec ecx
+		jnz .loop
+
+	pop ebx
 
 	ret
 
@@ -326,6 +380,24 @@ ldr_check_magic:
 		print 'loom magic invalid', 10
 		jmp $
 	
+
+ldr_enable_protected_mode:
+
+	cli
+
+	; set the protected mode bit, from now on segment register access updates the cache.
+	mov eax, cr0
+	or al, 1
+	mov cr0, eax
+
+	; flush the instruction pipeline to ensure we ARE in protected mode.
+	jmp $+2
+
+	lgdt [gdtr]
+
+	sti
+
+	ret
 
 ldr_load_loom:
 	call rng_get
@@ -347,33 +419,32 @@ ldr_load_loom:
 
 	call ldr_alloc_stack
 	call ldr_print_segments
-	call ldr_parse_segments
-	call ldr_copy_segments
+	call ldr_load_segments
 
-	print 'Loading loom...', 10
-    jmp $
+	mov eax, [loom_base]
+	mov ebx, [eax + 8]  ; entry_segment
+	add ebx, 1 ; null segment
+	shl ebx, 3 ; *= descriptor size
+	mov eax, [eax + 12] ; entry_offset
+
+	push eax ebx
+
+	print 'Switching to protected mode', 10
+	call ldr_enable_protected_mode
+
+	pop ebx eax
+
+	push word bx
+	push word ax
+	retf
 
 str_segment:
 db 'SEGMENT', 0
-
-; For debugging purposes
-str_data_rw: db 'DATA RW', 0
-str_data_ro: db 'DATA RO', 0
-str_code_rx: db 'CODE RX', 0
-str_stack_rw: db 'STACK RW', 0
 
 loom_base: dd 0
 
 loom_offset: dd 0
 
-; TODO make struct definitions for this
-;
-;            in memory offset,
-;            |  in memory size
-;            |  |  on disk offset
-;            |  |  |  on disk size
-;            |  |  |  |
-data_rw:  dd 0, 0, 0, 0, str_data_rw
-data_ro:  dd 0, 0, 0, 0, str_data_ro
-code_rx:  dd 0, 0, 0, 0, str_code_rx
-stack_rw: dd 0, 0, 0, 0, str_stack_rw
+gdtr:
+dw 0
+dd 0
