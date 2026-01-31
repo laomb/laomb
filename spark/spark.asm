@@ -14,6 +14,7 @@ _start:
 	call disk_init
 	call gather_entropy
 	call fat12_init
+	call e820_init
 
 	mov si, str_boot_init
 	call fat12_find_file
@@ -78,9 +79,9 @@ _start:
 	je chainboot_vbr
 
 	; load loom to the bounce buffer for parsing.
-	mov ax, loom_bounce_buffer_segment
+	mov ax, supervisor_bounce_buffer_segment
 	mov es, ax
-	mov di, loom_bounce_buffer_offset
+	mov di, supervisor_bounce_buffer_offset
 
 	lea si, [target_83]
 	mov ecx, ebx
@@ -118,11 +119,21 @@ _start:
 
 .target_nf:
 	print 'Error: Boot target file "', !cstr( [target_83] | 11 ) ,'" not found on disk', 10
-	jmp $
+	jmp panic
 
 .target_read_err:
 	print 'Error: Failed to read target file data', 10
-	jmp $
+
+panic:
+	mov si, str_panic
+	mov cx, str_panic_end - str_panic
+	call print_str16
+
+	; GET KEYSTROKE
+	xor ah, ah
+	int 0x16
+
+	jmp 0x0ffff:0
 
 include 'source16/print.asm'
 include 'source16/serial.asm'
@@ -133,12 +144,17 @@ include 'source16/fat12.asm'
 include 'source16/ini_parse.asm'
 include 'source16/rand.asm'
 include 'source16/chainboot.asm'
+include 'source16/e820.asm'
 
 include 'sourceur/unreal.asm'
 include 'sourceur/loader.asm'
+include 'sourceur/paslr.asm'
 
 str_boot_init: db 'BOOT    INI'
 target_83: db 'LOOM    BIN'
 
 str_cat_spark: db 'spark', 0
 str_key_boot: db 'boot', 0
+
+str_panic: db 'Fatal error — Press any key to reboot!', 10
+str_panic_end:

@@ -2817,3 +2817,39 @@ calminstruction ibts? dest*,offs*,len*,src*
 	invalid_combination_of_operands:
 	err	'invalid combination of operands'
 end calminstruction
+
+calminstruction addr16? instr&
+	check x86.mode = 32
+	jno plain
+
+	emit 1, 67h
+plain:
+	assemble instr
+end calminstruction
+
+calminstruction addr32? instr&
+	check x86.mode = 16
+	jno plain
+
+	emit 1, 67h
+plain:
+	assemble instr
+end calminstruction
+
+calminstruction data16? instr&
+    check x86.mode = 32
+    jno plain
+
+    emit 1, 66h
+plain:
+    assemble instr
+end calminstruction
+
+calminstruction data32? instr&
+    check x86.mode = 16
+    jno plain
+
+    emit 1, 66h
+plain:
+    assemble instr
+end calminstruction

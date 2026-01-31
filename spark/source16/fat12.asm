@@ -379,7 +379,7 @@ corrupted_filesystem:
 	mov cx, str_corrupted_fs_end - str_corrupted_fs
 	call print_str16
 
-	jmp $
+	jmp panic
 
 first_data_sector: dw 0
 root_dir_sectors: dw 0
