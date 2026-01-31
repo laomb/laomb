@@ -536,7 +536,7 @@ lbf_type_to_access:
 	ret
 
 .code:
-	mov al, 0x9A
+	mov al, 0x99
 	ret
 
 .data:
