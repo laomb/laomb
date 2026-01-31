@@ -950,6 +950,10 @@ calminstruction mov? dest*,src*
 	jyes	mov_creg_reg
 	check	@src.type = 'sreg' & ( @dest.type = 'reg' | @dest.type = 'mem' )
 	jyes	mov_rm_sreg
+
+	check @dest.type = 'sreg' & @dest.rm <> 1 & @src.type = 'sreg'
+	jyes mov_sreg_sreg
+
 	check	@dest.type = 'sreg' & @dest.rm <> 1 & ( @src.type = 'reg' | @src.type = 'mem' )
 	jyes	mov_sreg_rm
 
@@ -1111,6 +1115,11 @@ calminstruction mov? dest*,src*
 	check	size = 1
 	jyes	invalid_operand_size
 	xcall	x86.store_instruction@src, (8Eh),@dest.rm
+	exit
+
+	mov_sreg_sreg:
+	xcall x86.push_instruction, (0), src
+	xcall x86.pop_instruction, (0), dest
 	exit
 
 	invalid_operand_size:
