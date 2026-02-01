@@ -139,7 +139,7 @@ end macro
 macro __print_cstr_null p1&
 	local __pcl_loop, __pcl_done
 	push ax si
-	
+
 	match [m], p1
 		lea si, [m]
 	else
@@ -155,6 +155,50 @@ __pcl_loop:
 	jmp __pcl_loop
 __pcl_done:
 	pop si ax
+end macro
+
+macro __print_ecstr_arg len*, p1&
+	local __pcl_loop, __pcl_done
+	push eax ecx esi
+	
+	match [m], p1
+		lea esi, [m]
+	else
+		mov esi, p1
+	end match
+	mov ecx, len
+	jecxz __pcl_done
+__pcl_loop:
+	mov al, byte [esi]
+	inc esi
+	call print_char16
+
+	dec ecx
+	jnz __pcl_loop
+__pcl_done:
+	pop esi ecx eax
+end macro
+
+macro __print_ecstr_null p1&
+	local __pcl_loop, __pcl_done
+	push eax esi
+
+	match [m], p1
+		lea esi, [m]
+	else
+		mov esi, p1
+	end match
+__pcl_loop:
+	mov al, byte [esi]
+	inc esi
+	test al, al
+	jz __pcl_done
+
+	call print_char16
+
+	jmp __pcl_loop
+__pcl_done:
+	pop esi eax
 end macro
 
 macro __print_cstr lb*, sz*
@@ -262,6 +306,18 @@ macro __print_one a&
 		else match =ebp, a
 			__print_reg32 ebp
 			__done = 1
+		end match
+	end if
+
+	if __done = 0
+		match =!ecstr (__cargs), a
+			match p1 =| p2, __cargs
+				__print_ecstr_arg p2, p1
+				__done = 1
+			else match p2, __cargs
+				__print_ecstr_null p2
+				__done = 1
+			end match
 		end match
 	end if
 

@@ -149,6 +149,7 @@ include 'source16/e820.asm'
 include 'sourceur/unreal.asm'
 include 'sourceur/loader.asm'
 include 'sourceur/paslr.asm'
+include 'sourceur/export.asm'
 
 str_boot_init: db 'BOOT    INI'
 target_83: db 'LOOM    BIN'

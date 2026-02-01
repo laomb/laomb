@@ -51,12 +51,12 @@ struct lbf_rel_entry
 end struct
 
 ; [in] ESI = file base
-; [out] ESI = file base
-; [out] EDI = entry SS
 ; [out] EAX = entry CS
 ; [out] EBX = gdt base
 ; [out] ECX = entry EIP
 ; [out] EDX = stack base
+; [out] ESI = gdt limit
+; [out] EDI = entry SS
 lbf_load:
 	push bp
 	mov bp, sp
@@ -68,9 +68,84 @@ lbf_load:
 	; dword(3) [bp - 16] = segment table pointer
 	; dword(4) [bp - 20] = total memory size required
 	; dword(5) [bp - 24] = temporary count.
-	sub sp, 24
+	; dword(6) [bp - 28] = spark segment physical base
+	; dword(7) [bp - 32] = spark segment size
+	sub sp, 32
 
 	mov dword [bp - 4], esi
+
+	mov dword [bp - 28], 0
+	mov dword [bp - 32], 0
+
+	; accumulate total spark segment size.
+	lea ebx, [spark_export_table]
+	xor ecx, ecx
+.spark_calc_loop:
+	; check for null terminator.
+	mov eax, [ebx]
+	test eax, eax
+	jz .spark_calc_done
+
+	; align size to 4 bytes.
+	mov eax, [ebx + 8]
+	add eax, 3
+	and eax, 0xfffffffc
+	add ecx, eax
+
+	; move to the next entry.
+	add ebx, 12
+	jmp .spark_calc_loop
+
+.spark_calc_done:
+	; nothing to export?
+	test ecx, ecx
+	jz .spark_load_done
+
+	mov [bp - 32], ecx
+	push ecx
+
+	; align to page size.
+	mov ebx, ecx
+	add ebx, 0xfff
+	and ebx, 0xfffff000
+
+	call paslr_find_usable
+	test eax, eax
+	jz .err_nomem
+
+	; save the physical base of spark segment.
+	mov [bp - 28], eax
+	
+	mov edi, eax
+	pop ecx
+
+	mov ebx, spark_export_table
+.spark_copy_loop:
+	mov eax, [ebx]
+	test eax, eax
+	jz .spark_load_done
+
+	push ecx edi
+
+	; load payload and length.
+	mov esi, [ebx + 4]
+	mov ecx, [ebx + 8]
+	addr32 data32 rep movsb
+
+	pop edi ecx
+
+	; advance dest pointer by aligned length.
+	mov eax, [ebx + 8]
+	add eax, 3
+	and eax, 0xfffffffc
+	add edi, eax
+
+	; next entry.
+	add ebx, 12
+	jmp .spark_copy_loop
+
+.spark_load_done:
+	mov esi, dword [bp - 4]
 
 	; check the lbf magic.
 	cmp dword [esi + lbf_header.magic], LBF_MAGIC
@@ -254,10 +329,10 @@ lbf_load:
 
 	; convert target segment index to GDT selector.
 	mov eax, dword [edi + lbf_rel_entry.tgt_seg]
-	
+
 	; skip null entry.
 	inc eax
-	
+
 	; convert to gdt selector.
 	shl eax, 3
 
@@ -278,11 +353,134 @@ lbf_load:
 	jmp .reloc_loop
 
 .relocs_done:
+	; are there any exports of spark?
+	cmp dword [bp - 32], 0
+	jz .imports_done
+
+	; find the import directory.
+	mov esi, dword [bp - 4]
+	lea eax, [str_imports_dir]
+	call lbf_find_dir
+
+	; supervisor has no imports.
+	test eax, eax
+	jz .imports_done
+
+	; convert rva to pointer.
+	add eax, esi
+
+	; read module count and prepare pointer to first module.
+	mov ecx, [eax]
+	add eax, 4
+.mod_loop:
+	; no more imports?
+	test ecx, ecx
+	jz .imports_done
+
+	; convert offset to rva to pointer.
+	mov ebx, [eax]
+	add ebx, [esi + lbf_header.rva_strings]
+	add ebx, esi
+
+	; compare the name to `spark`.
+	lea edi, [str_spark_mod]
+.mod_cmp_loop:
+	mov dl, byte [edi]
+
+	; byte mismatch.
+	cmp dl, byte [ebx]
+	jne .next_mod
+
+	; null terminator reached.
+	test dl, dl
+	jz .found
+
+	inc edi
+	inc ebx
+
+	jmp .mod_cmp_loop
+
+.mod_done:
+	pop eax
+.next_mod:
+	; next module entry.
+	add eax, 12
+	dec ecx
+	jmp .mod_loop
+
+.found:
+	push eax
+
+	; get ILT pointer.
+	mov esi, [eax + 4]
+	add esi, dword [bp - 4]
+	
+	; get IPT rva.
+	mov edi, [eax + 8]
+.func_loop:
+	mov ebx, [esi]
+
+	; check for ILT null terminator.
+	test ebx, ebx
+	jz .mod_done
+
+	; convert string offset to rva to pointer.
+	mov edx, dword [bp - 4]
+	add ebx, [edx + lbf_header.rva_strings]
+	add ebx, edx
+
+	; find the symbol in spark export table.
+	push ecx esi edi
+	call lbf_find_spark_offset
+	mov edx, eax
+	pop edi esi ecx
+
+	; supervisor requests but spark doesn't export.
+	cmp edx, -1
+	je .next_func
+
+	push ebx
+
+	; calculate spark selector.
+	mov ebx, dword [bp - 8]
+	mov ebx, [ebx]
+	add ebx, 2
+	shl ebx, 3
+
+	push edx
+
+	; convert rva to physical address
+	mov eax, edi
+	call lbf_rva_to_phys
+	mov edx, eax
+
+	pop eax
+
+	; patch far pointer.
+	mov [edx], eax
+	mov [edx + 4], bx
+
+	pop ebx
+.next_func:
+	; next ILT entry.
+	add esi, 4
+
+	; next IPT entry.
+	add edi, 6
+
+	jmp .func_loop
+
+.imports_done:
 	; calculate needed memory for the GDT.
 	mov edi, dword [bp - 8]
 	mov ecx, dword [edi]
-	inc ecx
+	add ecx, 2
 
+	; if spark segment exists, add one more.
+	cmp dword [bp - 32], 0
+	jz .no_spark_gdt
+	inc ecx
+.no_spark_gdt:
 	push ecx
 
 	; allocate the GDT.
@@ -315,6 +513,9 @@ lbf_load:
 	test ecx, ecx
 	jz .gdt_built
 
+	cmp dword [bp - 24], 0
+	jz .gdt_stack_seg
+
 	push ebx ecx
 
 	; load physical base.
@@ -328,7 +529,6 @@ lbf_load:
 	mov eax, dword [edx + lbf_seg_entry.type]
 	call lbf_type_to_access
 
-	; ebx -> base, ecx -> limit, al -> access byte.
 	call emit_gdt_entry
 	
 	pop ecx ebx
@@ -338,11 +538,14 @@ lbf_load:
 
 	; next directory entry.
 	add edx, sizeof.lbf_seg_entry
+	dec dword [bp - 24]
 	dec ecx
 
 	jmp .gdt_build_loop
 
-.gdt_built:
+.gdt_stack_seg:
+	push ebx ecx
+
 	; load file base to read header fields.
 	mov esi, dword [bp - 4]
 
@@ -359,12 +562,33 @@ lbf_load:
 	mov al, 0x92
 	call emit_gdt_entry
 
-	; return the SS selector in EDI.
-	mov edi, dword [bp - 24]
+	pop ecx ebx
+	dec ecx
+
+	; check for spark segment.
+	test ecx, ecx
+	jz .gdt_built
+
+	push ebx ecx
+
+	; get the spark segment base and limit.
+	mov ebx, dword [bp - 28]
+	mov ecx, dword [bp - 32]
+	dec ecx
+
+	; emit the spark segment.
+	mov al, 0x92
+	call emit_gdt_entry
+
+	pop ecx ebx
+.gdt_built:
+	; get the segment count, which is the SS index.
+	mov edi, dword [bp - 8]
+	mov edi, [edi]
+
+	; convert index to selector.
 	inc edi
 	shl edi, 3
-
-	mov esi, dword [bp - 4]
 
 	; place the stack at the top of the allocated memory.
 	mov edx, dword [esi + lbf_header.stack_size]
@@ -379,6 +603,15 @@ lbf_load:
 
 	; load entry EIP
 	mov ecx, dword [esi + lbf_header.entry_off]
+
+	; calculate the gdt limit.
+	mov esi, edi
+	cmp dword [bp - 32], 0
+	jz .limit_calc
+
+	add esi, 8
+.limit_calc:
+	add esi, 7
 
 	mov sp, bp
 	pop bp
@@ -426,17 +659,13 @@ lbf_find_dir:
 	mov dl, byte [ebx]
 	mov dh, byte [eax]
 
-	; maybe we found a match.
-	test dl, dl
-	jz .match
-
-	; file name is shorter than the one we are looking for.
-	test dh, dh
-	jz .not_match
-
 	; byte in name does not match.
 	cmp dl, dh
 	jne .not_match
+
+	; we found a match.
+	test dl, dl
+	jz .match
 
 	inc eax
 	inc ebx
@@ -453,10 +682,6 @@ lbf_find_dir:
 	jmp .loop
 
 .match:
-	; string we are looking for is a superset of found string.
-	test dh, dh
-	jnz .not_match
-
 	pop eax
 	mov eax, [edi + 4]
 	pop ebp edi esi edx ecx ebx
@@ -547,6 +772,113 @@ lbf_type_to_access:
 	mov al, 0x92
 	ret
 
+; [in] EBX = pointer string to find
+; [out] EAX = offset in spark segment
+lbf_find_spark_offset:
+	push esi edi ecx
+
+	mov esi, spark_export_table
+	xor edi, edi
+.scan:
+	; load the pointer to the exported symbol name from the table.
+	mov eax, [esi]
+	test eax, eax
+	jz .not_found
+
+	push esi edi
+
+	; load target string and string tabele pointers.
+	mov esi, eax
+	mov edi, ebx
+.cmp_loop:
+	mov al, [esi]
+	mov ah, [edi]
+
+	cmp al, ah
+	jne .no_match
+
+	test al, al
+	jz .match
+
+	inc esi
+	inc edi
+	jmp .cmp_loop
+
+.no_match:
+	pop edi esi
+
+	; align payload length to 4 bytes.
+	mov ecx, [esi + 8]
+	add ecx, 3
+	and ecx, 0xfffffffc
+	add edi, ecx
+
+	; next entry.
+	add esi, 12
+	jmp .scan
+
+.match:
+	pop edi esi
+	mov eax, edi
+
+	pop ecx edi esi
+	ret
+
+.not_found:
+	mov eax, -1
+
+	pop ecx edi esi
+	ret
+
+; [in] EAX = rva
+; [in] BP = stack frame
+; [out] EAX = physical address
+lbf_rva_to_phys:
+	push ebx ecx edx esi edi
+
+	; load the segment directory pointer and segment count.
+	mov esi, dword [bp - 8]
+	mov ecx, [esi]
+
+	; load the first entry of segments and physical address table.
+	add esi, 4
+	mov ebx, dword [bp - 16]
+.seg_scan:
+	test ecx, ecx
+	jz .fail
+
+	; rva is before this segment?
+	mov edx, [esi + lbf_seg_entry.file_off]
+	cmp eax, edx
+	jb .next
+
+	; rva is after this segment?
+	mov edi, edx
+	add edi, [esi + lbf_seg_entry.file_size]
+	cmp eax, edi
+	jae .next
+
+	; match found, convert rva to pointer.
+	sub eax, edx
+	add eax, [ebx]
+	jmp .done
+
+.next:
+	; move to the next segment directory entry.
+	add esi, sizeof.lbf_seg_entry
+
+	; move to the next physical address entry.
+	add ebx, 4
+
+	dec ecx
+	jmp .seg_scan
+
+.fail:
+	xor eax, eax
+.done:
+	pop edi esi edx ecx ebx
+	ret
+
 ldr_load_loom:
 	mov esi, supervisor_bounce_buffer_flat
 	call lbf_load
@@ -563,17 +895,21 @@ ldr_load_loom:
 	push dword 0
 	push dword 0
 
-	mov bp, sp
-
 	; calculate the linear address of the gdt on the stack.
-	xor esi, esi
-	mov si, ss
-	shl esi, 4
+	push eax
+
+	xor eax, eax
+	mov ax, ss
+	shl eax, 4
+
 	movzx ebp, sp
-	add esi, ebp
+	add ebp, 4
+	add ebp, eax
+
+	pop eax
 
 	; construct a gdtr.
-	push esi
+	push ebp
 	push word 23
 
 	; lgdt the gdtr.
@@ -595,15 +931,11 @@ use32
 	; load a linear esp.
 	mov esp, stack_top_flat
 
-	; calculate the limit.
-	mov esi, edi
-	add esi, 7
-
 	; push the new gdtr onto the stack.
 	sub esp, 6
 	mov [esp], si
 	mov [esp + 2], ebx
-	
+
 	; load the new gdt.
 	lgdt [esp]
 
@@ -627,3 +959,5 @@ use32
 use16
 str_segment_dir: db 'SEGMENT', 0
 str_relocs_dir: db 'RELOCS', 0
+str_imports_dir: db 'IMPORT', 0
+str_spark_mod: db 'spark', 0

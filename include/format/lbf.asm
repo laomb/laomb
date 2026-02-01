@@ -144,7 +144,6 @@ macro import module*, func*
 	end repeat
 end macro
 
-
 macro export name*, label*
 	if LBF.cur_seg < 0
 		err "export must be inside a segment"
@@ -230,6 +229,58 @@ postpone
 		end repeat
 
 		end virtual
+	end if
+
+	if LBF.mod_count > 0
+		LBF.seg_count = LBF.seg_count + 1
+		LBF.ipt_seg_num = LBF.seg_count
+
+		LBF_SEG_IDX_IPT = LBF.ipt_seg_num - 1
+
+		repeat 1, num:LBF.ipt_seg_num
+			LBF.seg.init_#num = 1
+			LBF.seg.name_#num equ 'IPT'
+			LBF.seg.type_#num = ST_DATA_RW
+			LBF.seg.flag_#num = 0
+			LBF.seg.align_#num = 4
+		end repeat
+
+		virtual at 0
+			repeat LBF.mod_count, mod_idx:1
+				$ = ($ + 3) and (not 3)
+				LBF.ipt.mod_off_#mod_idx = $
+
+				repeat LBF.mod.func_count_#mod_idx, func_idx:1
+					LBF.ipt.ent_off_#mod_idx#_#func_idx = $
+					dd 0
+					dw 0
+				end repeat
+
+				dd 0
+				dw 0
+			end repeat
+
+			_ipt_size:
+			repeat 1, num:LBF.ipt_seg_num
+				load LBF.seg.data_#num : _ipt_size from 0
+			end repeat
+		end virtual
+
+		repeat 1, num:LBF.ipt_seg_num
+			LBF.seg.size_#num = _ipt_size
+		end repeat
+
+		repeat 1, num:LBF.ipt_seg_num
+			LBF_IPT_BASE equ _file_off_seg_#num
+		end repeat
+	
+		repeat LBF.mod_count, mod_idx:1
+			_rva_ipt_#mod_idx equ LBF_IPT_BASE + LBF.ipt.mod_off_#mod_idx
+
+			repeat LBF.mod.func_count_#mod_idx, func_idx:1
+				_ipt_entry_#mod_idx#_#func_idx equ LBF.ipt.ent_off_#mod_idx#_#func_idx
+			end repeat
+		end repeat
 	end if
 
 	org 0
@@ -338,19 +389,6 @@ postpone
 				dd LBF.mod.func_off_#mod_idx#_#func_idx
 			end repeat
 			dd 0
-
-			$ = ($ + 3) and (not 3)
-			_rva_ipt_#mod_idx:
-
-			repeat LBF.mod.func_count_#mod_idx, func_idx:1
-				_ipt_entry_#mod_idx#_#func_idx: 
-
-				dd 0
-				dw 0
-			end repeat
-			dd 0
-			dw 0
-
 		end repeat
 	end if
 
