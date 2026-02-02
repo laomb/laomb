@@ -33,7 +33,7 @@ define qemu_run_floppy
 		--no-shutdown \
 		-serial stdio \
 		-d "int,guest_errors" \
-		-M "pc-i440fx-7.2,acpi=off,accel=tcg,smm=off" \
+		-M "pc,acpi=off,accel=tcg,smm=off" \
 		-D "$(QEMU_LOG)"
 endef
 
