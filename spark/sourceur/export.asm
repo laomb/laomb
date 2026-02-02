@@ -1,9 +1,12 @@
 
 spark_export_table:
-    dd str_TestStr
-    dd ptr_TestStr
-    dd 2
+    dd str_mem_map_sym
+    dd final_memory_map
+    dd 4098
     dd 0
 
-ptr_TestStr: dw 0x1234
-str_TestStr: db 'boot$test_str', 0
+str_mem_map_sym: db 'boot$memory_map', 0
+final_memory_map:
+final_memory_map_entry_count:
+    rw 1
+    rb 4096

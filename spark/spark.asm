@@ -3,6 +3,7 @@ org 0x500
 include 'bios/disk.asm'
 include 'memory_layout.asm'
 include 'dbg_print.asm'
+include 'memmap.asm'
 
 _start:
 	mov ax, stack_segment
@@ -150,6 +151,7 @@ include 'sourceur/unreal.asm'
 include 'sourceur/loader.asm'
 include 'sourceur/paslr.asm'
 include 'sourceur/export.asm'
+include 'sourceur/memmap.asm'
 
 str_boot_init: db 'BOOT    INI'
 target_83: db 'LOOM    BIN'

@@ -613,6 +613,8 @@ lbf_load:
 .limit_calc:
 	add esi, 7
 
+	call patch_memmap
+
 	mov sp, bp
 	pop bp
 	ret

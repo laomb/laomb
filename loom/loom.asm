@@ -8,8 +8,9 @@ _start:
 	mov ax, rel 'IPT'
 	mov es, ax
 
-	lfs edi, [es:boot$test_str]
-	mov ax, [fs:edi]
+	lfs edi, [es:boot$memory_map]
+	mov ax, word [fs:edi]
+
 	xchg bx, bx
 
 	jmp $
@@ -17,4 +18,4 @@ _start:
 segment 'DATA', ST_DATA_RW
 data_segment
 
-import 'spark', 'boot$test_str'
+import 'spark', 'boot$memory_map'
