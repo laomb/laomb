@@ -240,7 +240,7 @@ mm$_add_region:
 	cmp edi, MM_PAGE_SIZE
 	jb .done
 
-	; determinte the alignment of the base.
+	; determine the alignment of the base.
 	; we can only fit a block of order N if base is aligned to 2^(N+12)
 	bsf eax, esi
 	jz .max_align
@@ -254,7 +254,7 @@ mm$_add_region:
 .got_align:
 	mov ebx, eax
 
-	; determinte the maximum order that fits into the size.
+	; determine the maximum order that fits into the size.
 	bsr eax, edi
 	sub eax, 12
 	mov ecx, eax
@@ -357,7 +357,9 @@ mm$_list_pop_head:
 
 ; procedure mm$_list_pop_head(address_of_block: Cardinal, order: Cardinal);
 mm$_remove_specific_free_block:
-	push ebx esi edi
+	push ebx esi edi es
+
+	mm$_SET_FLAT es
 
 	; load the head of the list for this order.
 	mov edi, [mm_pfa_state.free_buckets + edx * dword]
@@ -404,7 +406,7 @@ mm$_remove_specific_free_block:
 
 .not_found:
 	clc
-	pop edi esi ebx
+	pop es edi esi ebx
 	ret
 
 segment 'DATA', ST_DATA_RW
