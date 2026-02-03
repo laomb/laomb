@@ -61,7 +61,7 @@ vga$init:
 
 	ret
 
-; procedure vga$write_char(character: Int8);
+; procedure vga$write_char(character: Byte);
 vga$write_char:
 	push ebx edi es
 
@@ -146,7 +146,7 @@ vga$clear:
 
 ; packed_color_byte = background << 4 | foreground
 ;
-; procedure vga$clear(packed_color_byte: Int8);
+; procedure vga$clear(packed_color_byte: Byte);
 vga$set_color:
 	mov [vga_text_mode_state.color], al
 	ret
@@ -247,7 +247,7 @@ vga$_disable_cursor:
 
 	ret
 
-; procedure vga$enable_cursor(cursor_start: Int8, cursor_end: Int8);
+; procedure vga$enable_cursor(cursor_start: Byte, cursor_end: Byte);
 vga$_enable_cursor:
 	push dx
 	push ax
@@ -276,7 +276,7 @@ vga$_enable_cursor:
 
 	ret
 
-; procedure vga$set_cursor_follow(should_follow: Bool);
+; procedure vga$set_cursor_follow(should_follow: Boolean);
 vga$set_cursor_follow:
 	test al, al
 	jz .disable_follow
