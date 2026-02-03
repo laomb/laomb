@@ -7,7 +7,7 @@ MEMMAP_TYPE_BAD = 5
 MEMMAP_TYPE_SUPERVISOR = 0x1000
 MEMMAP_TYPE_BOOTLOADER = 0x1001
 
-struct memmap_entry
+struct SparkMemmapEntry
 	.base dd ?
 	.length dd ?
 	.type dd ?

@@ -188,10 +188,30 @@ patch_memmap:
 	pop ebx
 	pop ecx
 
-	; no overlap, write the entry.
-	mov [edi + memmap_entry.base], eax
-	mov [edi + memmap_entry.length], edx
-	mov dword [edi + memmap_entry.type], MEMMAP_TYPE_USABLE
+	; calculate the end addrss.
+	add edx, eax
+
+	; align base up to the next page boundary.
+	add eax, 0xfff
+	and eax, 0xfffff000
+
+	; align end down to the previous page boundary.
+	and edx, 0xfffff000
+
+	; calculate the new length.
+	sub edx, eax
+
+	; if the region was consumed by alignment skip it.
+	jbe .frag_loop
+
+	; store the aligned base.
+	mov dword [edi + SparkMemmapEntry.base], eax
+
+	; store the aligned length.
+	mov dword [edi + SparkMemmapEntry.length], edx
+
+	; write the type.
+	mov dword [edi + SparkMemmapEntry.type], MEMMAP_TYPE_USABLE
 
 	; advance destination buffer.
 	add edi, 12
@@ -202,15 +222,15 @@ patch_memmap:
 .copy_raw:
 	; copy base.
 	mov eax, dword [esi + e820_entry.base]
-	mov dword [edi + memmap_entry.base], eax
+	mov dword [edi + SparkMemmapEntry.base], eax
 
 	; copy length.
 	mov eax, dword [esi + e820_entry.length]
-	mov dword [edi + memmap_entry.length], eax
+	mov dword [edi + SparkMemmapEntry.length], eax
 
 	; copy type.
 	mov eax, dword [esi + e820_entry.type]
-	mov dword [edi + memmap_entry.type], eax
+	mov dword [edi + SparkMemmapEntry.type], eax
 
 	; advance destination buffer.
 	add edi, 12
@@ -231,10 +251,10 @@ patch_memmap:
 	mov eax, dword [bp - 32]
 	add eax, 0xfff
 	and eax, 0xfffff000
-	mov [edi + memmap_entry.length], eax
+	mov [edi + SparkMemmapEntry.length], eax
 
 	; write type.
-	mov dword [edi + memmap_entry.type], MEMMAP_TYPE_BOOTLOADER
+	mov dword [edi + SparkMemmapEntry.type], MEMMAP_TYPE_BOOTLOADER
 
 	add edi, 12
 	inc ebx
@@ -245,10 +265,10 @@ patch_memmap:
 
 	; length is already 4KiB aligned.
 	mov eax, dword [bp - 20]
-	mov [edi + memmap_entry.length], eax
+	mov [edi + SparkMemmapEntry.length], eax
 
 	; write type.
-	mov dword [edi + memmap_entry.type], MEMMAP_TYPE_SUPERVISOR
+	mov dword [edi + SparkMemmapEntry.type], MEMMAP_TYPE_SUPERVISOR
 
 	add edi, 12
 	inc ebx
