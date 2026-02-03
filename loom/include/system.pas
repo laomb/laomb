@@ -7,8 +7,6 @@ interface
 type
 	Void = Byte;
 
-	DWord = 0..4294967295;
-
 	AnsiChar = #0..#255;
 	PAnsiChar = ^AnsiChar;
 
