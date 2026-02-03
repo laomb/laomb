@@ -474,7 +474,7 @@ lbf_load:
 	; calculate needed memory for the GDT.
 	mov edi, dword [bp - 8]
 	mov ecx, dword [edi]
-	add ecx, 2
+	add ecx, 3
 
 	; if spark segment exists, add one more.
 	cmp dword [bp - 32], 0
@@ -580,6 +580,34 @@ lbf_load:
 	mov al, 0x92
 	call emit_gdt_entry
 
+	; emit a flat 4GiB segment.
+	xor ebx, ebx
+	mov ecx, 0xffffffff
+	mov al, 0x92
+	call emit_gdt_entry
+
+	; find the symbol in spark export table.
+	lea ebx, [str_flat_seg_sym]
+	call lbf_find_spark_offset
+	cmp eax, -1
+	je .flat_done
+
+	; convert the spark physical base to a pointer.
+	add eax, [bp - 28]
+
+	; calculate the flat selector index.
+	mov edx, [bp - 8]
+	mov edx, [edx]
+	add edx, 2
+
+	cmp dword [bp - 32], 0
+	jz .calc_flat_sel
+	inc edx
+.calc_flat_sel:
+	shl edx, 3
+	mov [eax], dx
+
+.flat_done:
 	pop ecx ebx
 .gdt_built:
 	; get the segment count, which is the SS index.
@@ -609,7 +637,7 @@ lbf_load:
 	cmp dword [bp - 32], 0
 	jz .limit_calc
 
-	add esi, 8
+	add esi, 16
 .limit_calc:
 	add esi, 7
 

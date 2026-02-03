@@ -114,7 +114,7 @@ macro data_segment
 end macro
 
 macro import module*, func*
-	local _found, _idx, _fidx
+	local _found
 	_found = 0
 
 	repeat LBF.mod_count
@@ -138,8 +138,6 @@ macro import module*, func*
 
 		repeat 1, f:LBF.mod.func_count_#n
 			LBF.mod.func_#n#_#f equ func
-
-			eval func, ' equ _ipt_entry_', `n, '_', `f
 		end repeat
 	end repeat
 end macro
@@ -246,21 +244,28 @@ postpone
 		end repeat
 
 		virtual at 0
+			_ipt_cursor = 0
+
 			repeat LBF.mod_count, mod_idx:1
-				$ = ($ + 3) and (not 3)
-				LBF.ipt.mod_off_#mod_idx = $
+				while (_ipt_cursor and 3) <> 0
+					db 0
+					_ipt_cursor = _ipt_cursor + 1
+				end while
+				LBF.ipt.mod_off_#mod_idx = _ipt_cursor
 
 				repeat LBF.mod.func_count_#mod_idx, func_idx:1
-					LBF.ipt.ent_off_#mod_idx#_#func_idx = $
+					eval LBF.mod.func_#mod_idx#_#func_idx, ' = _ipt_cursor'
 					dd 0
 					dw 0
+					_ipt_cursor = _ipt_cursor + 6
 				end repeat
 
 				dd 0
 				dw 0
+				_ipt_cursor = _ipt_cursor + 6
 			end repeat
 
-			_ipt_size:
+			_ipt_size = _ipt_cursor
 			repeat 1, num:LBF.ipt_seg_num
 				load LBF.seg.data_#num : _ipt_size from 0
 			end repeat
@@ -273,13 +278,9 @@ postpone
 		repeat 1, num:LBF.ipt_seg_num
 			LBF_IPT_BASE equ _file_off_seg_#num
 		end repeat
-	
+
 		repeat LBF.mod_count, mod_idx:1
 			_rva_ipt_#mod_idx equ LBF_IPT_BASE + LBF.ipt.mod_off_#mod_idx
-
-			repeat LBF.mod.func_count_#mod_idx, func_idx:1
-				_ipt_entry_#mod_idx#_#func_idx equ LBF.ipt.ent_off_#mod_idx#_#func_idx
-			end repeat
 		end repeat
 	end if
 
