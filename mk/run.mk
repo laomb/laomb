@@ -47,5 +47,5 @@ define bochs_run_floppy
 		echo "error: missing $(BOCHSRC_FLOPPY) in project root" >&2
 		exit 2
 	fi
-	bochs -q -f "$(BOCHSRC_FLOPPY)"
+	bochs -q -f "$(BOCHSRC_FLOPPY)" -dbg_gui
 endef

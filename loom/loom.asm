@@ -16,8 +16,6 @@ _start:
 	call vga$init
 	call vga$clear
 
-	call pas$test
-
 	jmp $
 
 segment 'DATA', ST_DATA_RW
@@ -28,7 +26,6 @@ loom$flat_segment:
 
 include 'source/dev/vga/textmode.asm'
 include 'source/dev/vga/crt.asm'
-include 'pascal/test.inc'
 
 import 'spark', 'boot$memory_map'
 import 'spark', 'boot$flat_segment'
