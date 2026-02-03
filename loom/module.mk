@@ -1,2 +1,2 @@
-$(LOOM_BIN): $(LOOM_ASM) $(CORE_INC)
+$(LOOM_BIN): $(LOOM_ASM)
 	$(call fasmg_compile,$<,$@,$(LOOM_INC_DIR),)
