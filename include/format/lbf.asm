@@ -155,6 +155,16 @@ macro export name*, label*
 	end repeat
 end macro
 
+macro align boundary, fill:0
+	if boundary <= 0
+		err "align: boundary must be > 0"
+	end if
+
+	while ($ mod boundary) <> 0
+		db fill
+	end while
+end macro
+
 calminstruction __x86_mov? dest*, src*
 	call mov, dest, src
 end calminstruction
@@ -327,7 +337,7 @@ postpone
 		dd _rva_dir_rel
 	end if
 
-	$ = ($ + 3) and (not 3)
+	align 4
 	_rva_strings:
 
 	LBF_AddString 'SEGMENT', _off_str_seg
@@ -355,7 +365,7 @@ postpone
 	load __strbytes : LBF.string_size from LBFStringBlob:0
 	db __strbytes
 
-	$ = ($ + 3) and (not 3)
+	align 4
 	_rva_dir_seg:
 	
 	dd LBF.seg_count
@@ -371,7 +381,7 @@ postpone
 	end repeat
 
 	if LBF.mod_count > 0
-		$ = ($ + 3) and (not 3)
+		align 4
 		_rva_dir_imp:
 
 		dd LBF.mod_count
@@ -383,7 +393,7 @@ postpone
 		end repeat
 
 		repeat LBF.mod_count, mod_idx:1
-			$ = ($ + 3) and (not 3)
+			align 4
 			_rva_ilt_#mod_idx:
 			
 			repeat LBF.mod.func_count_#mod_idx, func_idx:1
@@ -394,7 +404,7 @@ postpone
 	end if
 
 	if LBF.exp_count > 0
-		$ = ($ + 3) and (not 3)
+		align 4
 		_rva_dir_exp:
 		
 		dd LBF.exp_count
@@ -407,7 +417,7 @@ postpone
 	end if
 
 	if LBF.rel_count > 0
-		$ = ($ + 3) and (not 3)
+		align 4
 		_rva_dir_rel:
 		
 		dd LBF.rel_count
@@ -420,7 +430,7 @@ postpone
 		end repeat
 	end if
 
-	$ = ($ + 4095) and (not 4095)
+	align 4096
 
 	repeat LBF.seg_count
 		_align = LBF.seg.align_#%

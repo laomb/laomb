@@ -41,3 +41,14 @@ define pick_downloader
 	elif command -v wget >/dev/null 2>&1; then echo wget; \
 	else echo ""; fi
 endef
+
+define pick_fpc
+	if command -v fpc >/dev/null 2>&1; then echo fpc; else echo ""; fi
+endef
+
+define pick_lua
+	if command -v lua >/dev/null 2>&1; then echo lua; \
+	elif command -v lua5.3 >/dev/null 2>&1; then echo lua5.3; \
+	elif command -v lua5.4 >/dev/null 2>&1; then echo lua5.4; \
+	else echo ""; fi
+endef

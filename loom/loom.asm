@@ -16,21 +16,19 @@ _start:
 	call vga$init
 	call vga$clear
 
-	lea eax, [str_hello_world]
-	call vga$print
+	call pas$test
 
 	jmp $
 
 segment 'DATA', ST_DATA_RW
 data_segment
 
-str_hello_world: db 'Hello World from loom!', 10, 0
-
 loom$flat_segment:
 	dw ?
 
 include 'source/dev/vga/textmode.asm'
 include 'source/dev/vga/crt.asm'
+include 'pascal/test.inc'
 
 import 'spark', 'boot$memory_map'
 import 'spark', 'boot$flat_segment'

@@ -4,6 +4,7 @@ include config.mk
 include mk/tools.mk
 include mk/mode.mk
 include mk/fasmg.mk
+include mk/pascal.mk
 include mk/floppy.mk
 include mk/run.mk
 include mk/help.mk
