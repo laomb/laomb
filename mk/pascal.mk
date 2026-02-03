@@ -2,7 +2,7 @@ FPC ?= fpc
 LUA ?= lua
 
 FPC_FLAGS ?= -n -Mfpc -Anasm -Si -O2 -an -al -Xd \
-			 -Sc -Sg \
+			 -Sc -Sg -Rintel \
 			 -CpPENTIUM \
 			 -CfX87 \
 			 -O3 \
