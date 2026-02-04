@@ -33,7 +33,7 @@ end if
 	free_buckets rd MM_MAX_ORDER + 1
 end struct
 
-macro mm$_SET_FLAT sreg?*
+macro mm$SET_FLAT sreg?*
 	; load the flat segment into es.
 	push eax
 
@@ -63,7 +63,7 @@ end if
 	xor eax, eax
 	rep stosd
 
-	mm$_SET_FLAT es
+	mm$SET_FLAT es
 
 	; load a pointer into the memmap entries and the count.
 	lfs esi, [loom$memory_map]
@@ -176,7 +176,7 @@ end if
 mm$free_pages:
 	push ebx esi edi es
 
-	mm$_SET_FLAT es
+	mm$SET_FLAT es
 
 if build.debug
 	; update the status to free the memory.
@@ -309,7 +309,7 @@ end if
 mm$_list_push:
 	push ebx es
 
-	mm$_SET_FLAT es
+	mm$SET_FLAT es
 
 	; build a new linked list entry at the start of the region.
 	mov ebx, [mm_pfa_state.free_buckets + edx * dword]
@@ -332,7 +332,7 @@ mm$_list_push:
 mm$_list_pop_head:
 	push es
 
-	mm$_SET_FLAT es
+	mm$SET_FLAT es
 
 	; get the old head.
 	mov esi, [mm_pfa_state.free_buckets + ecx * dword]
@@ -359,7 +359,7 @@ mm$_list_pop_head:
 mm$_remove_specific_free_block:
 	push ebx esi edi es
 
-	mm$_SET_FLAT es
+	mm$SET_FLAT es
 
 	; load the head of the list for this order.
 	mov edi, [mm_pfa_state.free_buckets + edx * dword]

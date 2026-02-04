@@ -26,16 +26,6 @@ macro vga$_LOAD_CLEAR_EAX
 	mov al, ' '
 end macro
 
-macro vga$_SET_FLAT sreg?*
-	; load the flat segment into es.
-	push eax
-
-	mov ax, [loom$flat_segment]
-	mov sreg, ax
-
-	pop eax
-end macro
-
 macro vga$ENABLE_CURSOR cursor_start:14, cursor_end:15
 	mov eax, cursor_start
 	mov edx, cursor_end
@@ -66,7 +56,7 @@ vga$write_char:
 	push ebx edi es
 
 	; load a flat segment for accessing VGA memory.
-	vga$_SET_FLAT es
+	mm$SET_FLAT es
 
 	cmp al, 0xa
 	je .newline
@@ -119,7 +109,7 @@ vga$clear:
 	push ecx edi es
 
 	; load a flat segment for accessing VGA memory.
-	vga$_SET_FLAT es
+	mm$SET_FLAT es
 
 	cld
 
@@ -174,7 +164,7 @@ vga$_scroll_up:
 	push esi edi ds es
 
 	; load a flat segment for accessing VGA memory.
-	vga$_SET_FLAT es
+	mm$SET_FLAT es
 
 	; load the same flat segment into ds as movs? moves `ds:esi` to `es:edi`.
 	push es
