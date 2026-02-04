@@ -5,10 +5,11 @@ LBF_TYPE_BIN = 0x1
 LBF_TYPE_DL = 0x2
 LBF_TYPE_DRV = 0x3
 
-ST_CODE_RX = 0
-ST_DATA_RO = 1
-ST_DATA_RW = 2
-OTHER_RW = 3
+ST_CODE_XO = 0
+ST_CODE_RX = 1
+ST_DATA_RO = 2
+ST_DATA_RW = 3
+ST_OTHER_RW = 4
 
 SF_SHAREABLE = 0x1
 SF_DISCARD = 0x2
@@ -80,12 +81,11 @@ macro segment name*, type*, flags:0, align:16
 	repeat 1, num:_found
 		if _is_new
 			LBF.seg.init_#num = 0
+			LBF.seg.name_#num equ name
+			LBF.seg.type_#num = type
+			LBF.seg.flag_#num = flags
+			LBF.seg.align_#num = align
 		end if
-
-		LBF.seg.name_#num equ name
-		LBF.seg.type_#num = type
-		LBF.seg.flag_#num = flags
-		LBF.seg.align_#num = align
 	end repeat
 
 	virtual at 0

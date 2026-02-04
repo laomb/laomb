@@ -47,7 +47,7 @@ macro vga$DISABLE_CURSOR
 	call vga$_disable_cursor
 end macro
 
-segment 'TEXT', ST_CODE_RX
+segment 'TEXT', ST_CODE_XO
 
 ; procedure vga$init();
 vga$init:

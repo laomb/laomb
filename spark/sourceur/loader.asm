@@ -6,10 +6,11 @@ LBF_TYPE_BIN = 0x1
 LBF_TYPE_DL = 0x2
 LBF_TYPE_DRV = 0x3
 
-ST_CODE_RX = 0
-ST_DATA_RO = 1
-ST_DATA_RW = 2
-OTHER_RW = 3
+ST_CODE_XO = 0
+ST_CODE_RX = 1
+ST_DATA_RO = 2
+ST_DATA_RW = 3
+ST_OTHER_RW = 4
 
 SF_SHAREABLE = 0x1
 SF_DISCARD = 0x2
@@ -775,6 +776,9 @@ emit_gdt_entry:
 ; [in] EAX = lbf type
 ; [out] AL = access byte
 lbf_type_to_access:
+	cmp eax, ST_CODE_XO
+	je .code_xo
+
 	cmp eax, ST_CODE_RX
 	je .code
 
@@ -784,14 +788,18 @@ lbf_type_to_access:
 	cmp eax, ST_DATA_RW
 	je .data_rw
 
-	cmp eax, OTHER_RW
+	cmp eax, ST_OTHER_RW
 	je .data_rw
 
 	mov al, 0x90
 	ret
 
+.code_xo:
+	mov al, 0x98
+	ret
+
 .code:
-	mov al, 0x99
+	mov al, 0x9A
 	ret
 
 .data:

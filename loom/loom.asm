@@ -1,7 +1,7 @@
 format lbf bin 8192
 use32
 
-segment 'TEXT', ST_CODE_RX
+segment 'TEXT', ST_CODE_XO
 
 entry _start
 _start:

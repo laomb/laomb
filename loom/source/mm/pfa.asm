@@ -43,7 +43,7 @@ macro mm$_SET_FLAT sreg?*
 	pop eax
 end macro
 
-segment 'TEXT', ST_CODE_RX
+segment 'TEXT', ST_CODE_XO
 
 ; procedure mm$init();
 mm$init:
