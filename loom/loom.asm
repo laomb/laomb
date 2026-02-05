@@ -22,12 +22,12 @@ _start:
 	call vga$init
 	call vga$clear
 
+	; register an early vga text mode sinker.
+	lea eax, [vga$print]
+	call llog$register_sink
+
 	call mm$init
 	call gdt$init
-
-	mm$SET_FLAT es
-	mov eax, 0xB8000
-	mov word [es:eax], 0x4F21
 
 	jmp $
 
@@ -47,6 +47,7 @@ include 'source/cpu/table_descriptor.asm'
 include 'source/cpu/gdt.asm'
 include 'source/sys/el.asm'
 include 'source/sys/shuttle.asm'
+include 'source/sys/llog.asm'
 
 import 'spark', 'boot$memory_map'
 import 'spark', 'boot$flat_segment'
