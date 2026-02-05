@@ -25,6 +25,10 @@ _start:
 	call mm$init
 	call gdt$init
 
+	mm$SET_FLAT es
+	mov eax, 0xB8000
+	mov word [es:eax], 0x4F21
+
 	jmp $
 
 segment 'DATA', ST_DATA_RW
@@ -41,6 +45,8 @@ include 'source/dev/vga/crt.asm'
 include 'source/mm/pfa.asm'
 include 'source/cpu/table_descriptor.asm'
 include 'source/cpu/gdt.asm'
+include 'source/sys/el.asm'
+include 'source/sys/shuttle.asm'
 
 import 'spark', 'boot$memory_map'
 import 'spark', 'boot$flat_segment'
