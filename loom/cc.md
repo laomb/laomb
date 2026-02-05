@@ -10,9 +10,11 @@ Loom uses a custom register-based calling convention optimized for 32-bit x86 pr
 | **Argument 1**	| `EAX`            | Primary input / Accumulator              |
 | **Argument 2**	| `EDX`            | Secondary input / Data                   |
 | **Argument 3**	| `ECX`            | Third input / Counter                    |
-| **Argument 4+**	| `Stack`          | Pushed Right-to-Left                     |
+| **Argument 4+**	| `Stack`          | Pushed Left-to-Right                     |
 | **Return** 		| `EAX`            | Primary return value                     |
 | **Error/Stat**	| `EFLAGS` (CF)    | Carry Flag: 0 = Success, 1 = Error       |
+
+> Stack cleanup is the responsibility of the callee!
 
 ## Preservation Rules
 
