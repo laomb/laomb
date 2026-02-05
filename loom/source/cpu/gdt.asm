@@ -236,4 +236,4 @@ gdt$table_address:
 	dd ?
 
 gdt$bitmap:
-	rb GDT_MAX / 8
+	dd GDT_MAX / 8 dup(0)
