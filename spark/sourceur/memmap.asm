@@ -16,7 +16,7 @@ patch_memmap:
 	push edi
 
 	; skip the count word for now.
-	add edi, 2
+	add edi, 4
 
 	; accumulator for written entry count.
 	xor ebx, ebx
@@ -273,9 +273,9 @@ patch_memmap:
 	add edi, 12
 	inc ebx
 
-	; write final memmap entry count to the frist word.
+	; write final memmap entry count to the frist dword.
 	pop edi
-	mov [edi], bx
+	mov [edi], ebx
 
 .done:
 	popad
