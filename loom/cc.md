@@ -1,4 +1,4 @@
-# Loom Kernel Calling Convention (LoomCC)
+# Loom Supervisor Calling Convention (LoomCC)
 
 ## Overview
 Loom uses a custom register-based calling convention optimized for 32-bit x86 protected mode. It prioritizes speed by passing the first three arguments in general-purpose registers, minimizing stack overhead.
