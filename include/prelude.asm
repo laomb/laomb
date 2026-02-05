@@ -1,4 +1,6 @@
+include 'fasm2/xcalm.asm'
 include 'fasm2/p5.asm'
+include 'fasm2/inlinemacro.asm'
 include '@@.asm'
 include 'struct.asm'
 include 'format.asm'

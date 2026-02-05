@@ -97,56 +97,6 @@ macro use32?
 	x86.mode = 32
 end macro
 
-
-calminstruction calminstruction?.initsym? var*, val&
-	publish var, val
-end calminstruction
-
-calminstruction calminstruction?.asm? line&
-	local	name, i
-	initsym name, name.0
-	match	name.i, name
-	compute i, i+1
-	arrange name, name.i
-	publish name, line
-	arrange line, =assemble name
-	assemble line
-end calminstruction
-
-calminstruction calminstruction?.xcall? instruction*, arguments&
-	arrange instruction, =call instruction
-	convert:
-	match	, arguments
-	jyes	ready
-	local	v
-	match	v=,arguments, arguments, <>
-	jyes	recognize
-	arrange v, arguments
-	arrange arguments,
-	recognize:
-	match	(v), v
-	jyes	numeric
-	match	<v>, v
-	jyes	symbolic
-	append:
-	arrange instruction, instruction=,v
-	jump	convert
-	numeric:
-	compute v, v
-	symbolic:
-	local proxy, base, i
-	initsym base, proxy
-	initsym i, 0
-	compute i, i+1
-	arrange proxy, base.i
-	publish proxy, v
-	arrange instruction, instruction=,proxy
-	jump	convert
-	ready:
-	assemble instruction
-end calminstruction
-
-
 x86.emit.byte = 1
 calminstruction (name) ?! flag&
 	publish flag, x86.emit.byte
