@@ -245,10 +245,15 @@ mm$_add_region:
 	bsf eax, esi
 	jz .max_align
 
+	cmp eax, 12
+	jb .force_page_align
+
 	; convert bit position to order.
 	sub eax, 12
 	jmp .got_align
 
+.force_page_align:
+	xor eax, eax
 .max_align:
 	mov eax, MM_MAX_ORDER
 .got_align:

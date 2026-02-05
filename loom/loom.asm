@@ -23,6 +23,7 @@ _start:
 	call vga$clear
 
 	call mm$init
+	call gdt$init
 
 	jmp $
 
@@ -38,6 +39,8 @@ loom$memory_map:
 include 'source/dev/vga/textmode.asm'
 include 'source/dev/vga/crt.asm'
 include 'source/mm/pfa.asm'
+include 'source/cpu/table_descriptor.asm'
+include 'source/cpu/gdt.asm'
 
 import 'spark', 'boot$memory_map'
 import 'spark', 'boot$flat_segment'
