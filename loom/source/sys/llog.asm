@@ -5,12 +5,14 @@ segment 'TEXT', ST_CODE_XO
 
 ; procedure llog$register_sink(handler: *fn(sz: PAnsiChar));
 llog$register_sink:
-	push edi es
+	push edi ds es
+
 	xchg edx, eax
 
 	; prepare segment for scan.
-	push ds
-	pop es
+	mov ax, rel 'DATA'
+	mov ds, ax
+	mov es, ax
 
 	; prepare operands for scan.
 	lea edi, [llog$sinks]
@@ -25,24 +27,27 @@ llog$register_sink:
 	mov [edi - 4], edx
 
 	clc
-	pop es edi
+	pop es ds edi
 	ret
 
 .full:
 	stc
-	pop es edi
+	pop es ds edi
 	ret
 
 ; procedure llog$msg(text: PAnsiChar);
 llog$msg:
-	push esi ebx
+	push esi ebx es
+
+	mov dx, rel 'DATA'
+	mov es, dx
 
 	; prepare variables for iterating sinker list.
-	lea esi, [llog$sinks]
+	lea esi, [es:llog$sinks]
 	mov ebx, MAX_SINKS
 .loop:
 	; load the sinker function pointer.
-	mov ecx, [esi]
+	mov ecx, [es:esi]
 	test ecx, ecx
 	jz .next
 
@@ -57,12 +62,16 @@ llog$msg:
 
 	jnz .loop
 
-	pop ebx esi
+	pop es ebx esi
 	ret
 
 ; procedure llog$hex(value: Cardinal, width: Cardinal);
 llog$hex:
-	push edi ebx
+	push edi ebx ds
+
+	; allow accessing the stack buffer via DS.
+	push ss
+	pop ds
 
 	; allocate a buffer on the stack.
 	sub esp, 32
@@ -97,12 +106,16 @@ llog$hex:
 
 	add esp, 32
 
-	pop ebx edi
+	pop ds ebx edi
 	ret
 
 ; procedure llog$dec(value: Cardinal);
 llog$dec:
-	push ebx esi edi
+	push ebx esi edi ds
+
+	; allow accessing the stack buffer via DS.
+	push ss
+	pop ds
 
 	; allocate a buffer on the stack.
 	sub esp, 16
@@ -131,7 +144,7 @@ llog$dec:
 	call llog$msg
 
 	add esp, 16
-	pop edi esi ebx
+	pop ds edi esi ebx
 	ret
 
 segment 'DATA', ST_DATA_RW

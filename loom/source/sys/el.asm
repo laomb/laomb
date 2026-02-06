@@ -4,9 +4,14 @@ EL_1 = 1
 EL_2 = 2
 EL_3 = 3
 
+segment 'TEXT', ST_CODE_XO
+
 ; procedure loom$lower_el(new_el: Byte);
 loom$lower_el:
-	push ebx
+	push ebx ds
+
+	mov ax, rel 'DATA'
+	mov ds, ax
 
 	movzx ebx, al
 
@@ -34,11 +39,16 @@ loom$lower_el:
 .set_only:
 	mov dword [loom$current_el], ebx
 
-	pop ebx
+	pop ds ebx
 	ret
 
 ; function loom$raise_el(new_el: Byte): Byte;
 loom$raise_el:
+	push ds
+
+	mov ax, rel 'DATA'
+	mov ds, ax
+
 	movzx ecx, al
 	mov eax, [loom$current_el]
 
@@ -46,11 +56,14 @@ loom$raise_el:
 	jb loom$_invalid_el_change
 
 	mov [loom$current_el], ecx
+
+	pop ds
 	ret
 
 loom$_invalid_el_change:
-	; TODO call into debugger.
-	jmp $
+	pop ds
+
+	panic 'Invalid EL change attempted!'
 
 segment 'DATA', ST_DATA_RW
 

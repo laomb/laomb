@@ -170,7 +170,7 @@ calminstruction __x86_mov? dest*, src*
 end calminstruction
 
 calminstruction mov? dest*, src*
-	local target, cmd
+	local target, cmd, no_prefix, handling_reloc, invalid_operand
 
 	match =rel? target, src
 	jyes handling_reloc
@@ -180,7 +180,7 @@ calminstruction mov? dest*, src*
 
 handling_reloc:
 	call x86.parse_operand@dest, dest
-	check @dest.type = 'reg' & @dest.size = 2
+	check @dest.size = 2
 	jno invalid_operand
 
 	check x86.mode = 16
@@ -215,7 +215,7 @@ macro reloc type*, target*
 	LBF.rel_count = LBF.rel_count + 1
 	repeat 1, num:LBF.rel_count
 		LBF.rel.src_seg_#num = LBF.cur_seg
-		LBF.rel.src_off_#num:
+		LBF.rel.src_off_#num = $
 		LBF.rel.tgt_seg_#num = _tgt_idx
 		LBF.rel.type_#num = type
 	end repeat

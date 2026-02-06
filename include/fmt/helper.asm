@@ -43,7 +43,8 @@ macro fmt__str_sub dest*, start*, len*, txt&
 		chunk = ''
 	end if
 
-	define dest chunk
+	restore dest
+	dest equ chunk
 end macro
 
 macro fmt__arg_at dest*, index*, args&

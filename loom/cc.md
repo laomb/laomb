@@ -20,8 +20,8 @@ Loom uses a custom register-based calling convention optimized for 32-bit x86 pr
 
 ### Caller-Saved (Volatile)
 *The caller must save these if they need the values after the function returns.*
-* `EAX`, `ECX`, `EDX`, `DS`
-* `EFLAGS`, `ES`, `FS`, `GS`
+* `EAX`, `ECX`, `EDX`
+* `EFLAGS`, `FS`, `GS`
 
 ### Callee-Saved (Non-Volatile)
 *The function must preserve these values if it modifies them.*
@@ -32,3 +32,5 @@ Loom uses a custom register-based calling convention optimized for 32-bit x86 pr
 * `ESP` (Stack pointer)
 * `CS`  (Code segment)
 * `SS`  (Stack segment)
+* `DS`  (Data Segment)
+* `ES`  (Extra Segment)

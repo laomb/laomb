@@ -4,6 +4,7 @@ VGA_TEXT_WIDTH = 80
 VGA_TEXT_HEIGHT = 25
 VGA_TEXT_COLOR_WHITE = 0xf
 VGA_TEXT_COLOR_RED = 0xc
+VGA_TEXT_BACKGROUND_BLUE = 0x10
 
 VGA_TEXT_FLAG_CURSOR_FOLLOW = 1
 
@@ -41,6 +42,11 @@ segment 'TEXT', ST_CODE_XO
 
 ; procedure vga$init();
 vga$init:
+	push ds
+
+	mov ax, rel 'DATA'
+	mov ds, ax
+
 	mov [vga_text_mode_state.cursor_x], 0
 	mov [vga_text_mode_state.cursor_y], 0
 	mov [vga_text_mode_state.color], VGA_TEXT_COLOR_WHITE
@@ -49,14 +55,18 @@ vga$init:
 	vga$ENABLE_CURSOR
 	call vga$_update_hw_cursor
 
+	pop ds
 	ret
 
 ; procedure vga$write_char(character: Byte);
 vga$write_char:
-	push ebx edi es
+	push ebx edi ds es
 
 	; load a flat segment for accessing VGA memory.
 	mm$SET_FLAT es
+
+	mov bx, rel 'DATA'
+	mov ds, bx
 
 	cmp al, 0xa
 	je .newline
@@ -101,15 +111,18 @@ vga$write_char:
 	jz .skip_hw_update
 	call vga$_update_hw_cursor
 .skip_hw_update:
-	pop es edi ebx
+	pop es ds edi ebx
 	ret
 
 ; procedure vga$clear();
 vga$clear:
-	push ecx edi es
+	push ecx edi ds es
 
 	; load a flat segment for accessing VGA memory.
 	mm$SET_FLAT es
+
+	mov ax, rel 'DATA'
+	mov ds, ax
 
 	cld
 
@@ -131,14 +144,21 @@ vga$clear:
 	call vga$_update_hw_cursor
 
 .done:
-	pop es edi ecx
+	pop es ds edi ecx
 	ret
 
 ; packed_color_byte = background << 4 | foreground
 ;
 ; procedure vga$clear(packed_color_byte: Byte);
 vga$set_color:
+	push ds
+
+	mov cx, rel 'DATA'
+	mov ds, cx
+
 	mov [vga_text_mode_state.color], al
+
+	pop ds
 	ret
 
 ; procedure vga$print(str: PAnsiChar);
@@ -268,15 +288,24 @@ vga$_enable_cursor:
 
 ; procedure vga$set_cursor_follow(should_follow: Boolean);
 vga$set_cursor_follow:
+	push ds
+
+	mov cx, rel 'DATA'
+	mov ds, cx
+
 	test al, al
 	jz .disable_follow
 
 	or byte [vga_text_mode_state.flags], VGA_TEXT_FLAG_CURSOR_FOLLOW
 	call vga$_update_hw_cursor
+
+	pop ds
 	ret
 
 .disable_follow:
 	and byte [vga_text_mode_state.flags], not VGA_TEXT_FLAG_CURSOR_FOLLOW
+
+	pop ds
 	ret
 
 segment 'DATA', ST_DATA_RW

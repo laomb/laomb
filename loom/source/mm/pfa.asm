@@ -47,10 +47,11 @@ segment 'TEXT', ST_CODE_XO
 
 ; procedure mm$init();
 mm$init:
-	push ebx esi edi es fs
+	push ebx esi edi ds es fs
 
-	push ds
-	pop es
+	mov ax, rel 'DATA'
+    mov ds, ax
+    mov es, ax
 
 if build.debug
 	mov dword [mm_pfa_state.total_mem], 0
@@ -90,12 +91,15 @@ end if
 	jmp .loop_map
 
 .done:
-	pop fs es edi esi ebx
+	pop fs es ds edi esi ebx
 	ret
 
 ; function mm$alloc_pages(order: Cardinal): Pointer;
 mm$alloc_pages:
-	push ebx esi edi
+	push ebx esi edi ds
+
+	mov bx, rel 'DATA'
+    mov ds, bx
 
 	cmp eax, MM_MAX_ORDER
 	ja .oom
@@ -164,19 +168,22 @@ if build.debug
 end if
 
 	clc
-	pop edi esi ebx
+	pop ds edi esi ebx
 	ret
 
 .oom:
 	stc
-	pop edi esi ebx
+	pop ds edi esi ebx
 	ret
 
 ; procedure mm$free_pages(ptr: Cardinal, order: Cardinal);
 mm$free_pages:
-	push ebx esi edi es
+	push ebx esi edi ds es
 
 	mm$SET_FLAT es
+
+	mov bx, rel 'DATA'
+    mov ds, bx
 
 if build.debug
 	; update the status to free the memory.
@@ -222,7 +229,7 @@ end if
 	; add the region back onto the freelist.
 	call mm$_list_push
 
-	pop es edi esi ebx
+	pop es ds edi esi ebx
 	ret
 
 ; procedure mm$_add_region(base: Cardinal, size: Cardinal);
@@ -335,7 +342,7 @@ mm$_list_push:
 
 ; function mm$_list_pop_head(order: Cardinal): Cardinal;
 mm$_list_pop_head:
-	push es
+	push esi es
 
 	mm$SET_FLAT es
 
@@ -357,7 +364,7 @@ mm$_list_pop_head:
 	mov dword [es:esi + MmFreeNode.next], 0
 	mov dword [es:esi + MmFreeNode.prev], 0
 
-	pop es
+	pop es esi
 	ret
 
 ; procedure mm$_list_pop_head(address_of_block: Cardinal, order: Cardinal);

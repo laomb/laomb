@@ -37,8 +37,7 @@ gdt$init:
 	call mm$alloc_pages
 	jnc .mem_ok
 
-	; TODO call into debugger.
-	jmp $
+	panic 'Failed to allocate memory for the global descriptor table!'
 
 .mem_ok:
 	mov [gdt$table_address], eax
@@ -95,16 +94,16 @@ gdt$init:
 
 	; reload descriptor cache to verify everything works.
 	push cs
-    push .cs_after
-    retf
+	push .cs_after
+	retf
 
 .cs_after:
 	mov ax, ds
-    mov ds, ax
-    mov ax, es
-    mov es, ax
-    mov ax, ss
-    mov ss, ax
+	mov ds, ax
+	mov ax, es
+	mov es, ax
+	mov ax, ss
+	mov ss, ax
 
 	; ensure the null selector isn't allocated.
 	bts [gdt$bitmap], 0
@@ -117,7 +116,7 @@ gdt$init:
 ;
 ; function gdt$alloc(base: Cardinal, limit: Cardinal, type: Cardinal): Cardinal;
 gdt$alloc:
-	push ebx edi es
+	push ebx edi ds es
 
 	; gdt limit is last valid address.
 	dec edx
@@ -125,6 +124,9 @@ gdt$alloc:
 	push eax ecx edx
 
 	mm$SET_FLAT es
+
+	mov bx, rel 'DATA'
+	mov ds, bx
 
 	; scan 32 bits at a time.
 	xor ebx, ebx
@@ -156,7 +158,7 @@ gdt$alloc:
 .write_entry:
 	; calculate a pointer to the descriptor slot.
 	mov edi, [gdt$table_address]
-    lea edi, [edi + ebx * 8]
+	lea edi, [edi + ebx * 8]
 
 	pop edx ecx eax
 
@@ -165,7 +167,7 @@ gdt$alloc:
 
 	; write base middle.
 	shr eax, 16
-    mov byte [es:edi + GdtEntry.base_mid], al
+	mov byte [es:edi + GdtEntry.base_mid], al
 
 	; write base high.
 	mov byte [es:edi + GdtEntry.base_high], ah
@@ -189,16 +191,16 @@ gdt$alloc:
 
 	; convert to selector and return.
 	mov eax, ebx
-    shl eax, 3
+	shl eax, 3
 
 	clc
-	pop es edi ebx
+	pop es ds edi ebx
 	ret
 
 .oom:
 	pop edx ecx eax
 	stc
-	pop es edi ebx
+	pop es ds edi ebx
 	ret
 
 ; procedure gdt$free(selector: Word);
@@ -206,7 +208,10 @@ gdt$free:
 	test ax, ax
 	jz .done
 
-	push edi es
+	push edi ds es
+
+	mov di, rel 'DATA'
+	mov ds, di
 
 	; convert selector to index.
 	movzx eax, ax
@@ -226,7 +231,7 @@ gdt$free:
 	mov [es:edi], eax
 	mov [es:edi + 4], eax
 
-	pop es edi
+	pop es ds edi
 .done:
 	ret
 

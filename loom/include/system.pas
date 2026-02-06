@@ -20,7 +20,7 @@ type
 	tkClassRef, tkPointer);
 
 	jmp_buf = packed record
-		ebx, esi, edi, ebp, esp, eip: DWord;
+		ebx, esi, edi, ebp, esp, eip: Cardinal;
 	end;
 	Pjmp_buf = ^jmp_buf;
 
@@ -33,7 +33,7 @@ type
 
 	PGuid = ^TGuid;
 	TGuid = packed record
-		Data1: DWord;
+		Data1: Cardinal;
 		Data2: Word;
 		Data3: Word;
 		Data4: array[0..7] of Byte;

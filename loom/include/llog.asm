@@ -17,31 +17,41 @@ macro __fmt_dispatch_static txt&
 	pop edx ecx eax
 end macro
 
+macro __fmt_dispatch_spec spec
+	if spec eq "d"
+		call llog$dec
+	else if spec eq "x"
+		mov edx, 8
+		call llog$hex
+	else if spec eq "s"
+		call llog$msg
+	else
+		mov edx, 8
+		call llog$hex
+	end if
+end macro
+
 macro __fmt_dispatch_arg spec, arg&
 	push eax ecx edx
 
-	if arg eqtype ""
-		__fmt_dispatch_static arg
-	else
-		match =eax, arg
-		else match [m], arg
-			mov eax, dword [m]
-		else
-			mov eax, arg
-		end match
+	match [m], arg
+		mov eax, dword [m]
 
-		if spec eq "d"
-			call llog$dec
-		else if spec eq "x"
-			mov edx, 8
-			call llog$hex
-		else if spec eq "s"
-			call llog$msg
+		__fmt_dispatch_spec spec
+	else
+		if arg eqtype ""
+			match v, arg
+				__fmt_dispatch_static v
+			end match
 		else
-			mov edx, 8
-			call llog$hex
+			match =eax, arg
+			else
+				mov eax, arg
+			end match
+
+			__fmt_dispatch_spec spec
 		end if
-	end if
+	end match
 
 	pop edx ecx eax
 end macro
@@ -96,7 +106,10 @@ macro print pattern*, args&
 				if chunk_len > 0
 					local txt_content 
 					fmt__str_sub txt_content, anchor, chunk_len, pattern
-					__fmt_dispatch_static txt_content
+
+					match v, txt_content
+						__fmt_dispatch_static v
+					end match
 				end if
 				__fmt_dispatch_static "{"
 				i = i + 2
@@ -106,7 +119,10 @@ macro print pattern*, args&
 				if chunk_len > 0
 					local txt_content
 					fmt__str_sub txt_content, anchor, chunk_len, pattern
-					__fmt_dispatch_static txt_content
+
+					match v, txt_content
+						__fmt_dispatch_static v
+					end match
 				end if
 
 				local j, spec_char, found_end
@@ -145,7 +161,8 @@ macro print pattern*, args&
 	if chunk_len > 0
 		local final_chunk
 		fmt__str_sub final_chunk, anchor, chunk_len, pattern
-		__fmt_dispatch_static final_chunk
+		match v, final_chunk
+			__fmt_dispatch_static v
+		end match
 	end if
 end macro
-

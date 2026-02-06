@@ -31,6 +31,10 @@ _start:
 	call mm$init
 	call gdt$init
 
+	; test a crash.
+	mov eax, EL_3
+	call loom$lower_el
+
 	jmp $
 
 segment 'DATA', ST_DATA_RW
@@ -50,6 +54,7 @@ include 'source/cpu/gdt.asm'
 include 'source/sys/el.asm'
 include 'source/sys/shuttle.asm'
 include 'source/sys/llog.asm'
+include 'source/sys/panic.asm'
 
 import 'spark', 'boot$memory_map'
 import 'spark', 'boot$flat_segment'
