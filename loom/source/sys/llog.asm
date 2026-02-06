@@ -100,6 +100,40 @@ llog$hex:
 	pop ebx edi
 	ret
 
+; procedure llog$dec(value: Cardinal);
+llog$dec:
+	push ebx esi edi
+
+	; allocate a buffer on the stack.
+	sub esp, 16
+
+	; calculate a pointer to the end of the string and add a null terminator.
+	lea edi, [esp + 15]
+	mov byte [edi], 0
+
+	; base of number.
+	mov ebx, 10
+.convert:
+	dec edi
+	xor edx, edx
+	div ebx
+
+	; conver the remainder to ascii and store in the buffer.
+	add dl, '0'
+	mov [edi], dl
+
+	; if quotient is 0, we are done
+	test eax, eax
+	jnz .convert
+
+	; dispatch the message.
+	mov eax, edi
+	call llog$msg
+
+	add esp, 16
+	pop edi esi ebx
+	ret
+
 segment 'DATA', ST_DATA_RW
 
 llog$sinks:

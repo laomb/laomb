@@ -1,6 +1,8 @@
 format lbf bin 8192
 use32
 
+include 'llog.asm'
+
 segment 'TEXT', ST_CODE_XO
 
 entry _start
