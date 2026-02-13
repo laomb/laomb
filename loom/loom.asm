@@ -28,7 +28,7 @@ _start:
 	lea eax, [vga$print]
 	call llog$register_sink
 
-	call mm$init
+	call mm$pfa_init
 	call gdt$init
 
 	; test a crash.

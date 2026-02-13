@@ -45,8 +45,8 @@ end macro
 
 segment 'TEXT', ST_CODE_XO
 
-; procedure mm$init();
-mm$init:
+; procedure mm$pfa_init();
+mm$pfa_init:
 	push ebx esi edi ds es fs
 
 	mov ax, rel 'DATA'
