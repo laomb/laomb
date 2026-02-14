@@ -10,10 +10,10 @@ segment 'TEXT', ST_CODE_XO
 loom$lower_el:
 	push ebx ds
 
+	movzx ebx, al
+
 	mov ax, rel 'DATA'
 	mov ds, ax
-
-	movzx ebx, al
 
 	; check if we are trying to wrongly raise EL. 
 	cmp ebx, dword [loom$current_el]
@@ -46,15 +46,21 @@ loom$lower_el:
 loom$raise_el:
 	push ds
 
+	movzx ecx, al
+
 	mov ax, rel 'DATA'
 	mov ds, ax
 
-	movzx ecx, al
 	mov eax, dword [loom$current_el]
 
 	cmp ecx, eax
 	jb loom$_invalid_el_change
 
+	cmp ecx, EL_3
+	jne .set_only
+
+	cli
+.set_only:
 	mov dword [loom$current_el], ecx
 
 	pop ds

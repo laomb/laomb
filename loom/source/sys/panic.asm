@@ -44,6 +44,9 @@ panic$trigger:
 
 	mov ebp, esp
 
+	mov al, EL_3
+	call loom$raise_el
+
 	mov eax, VGA_TEXT_COLOR_WHITE or VGA_TEXT_BACKGROUND_BLUE
 	call vga$set_color
 
