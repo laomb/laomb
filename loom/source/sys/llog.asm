@@ -24,7 +24,7 @@ llog$register_sink:
 	jne .full
 
 	; write the sinker pointer to the found free slot.
-	mov [edi - 4], edx
+	mov dword [edi - 4], edx
 
 	clc
 	pop es ds edi
@@ -47,7 +47,7 @@ llog$msg:
 	mov ebx, MAX_SINKS
 .loop:
 	; load the sinker function pointer.
-	mov ecx, [es:esi]
+	mov ecx, dword [es:esi]
 	test ecx, ecx
 	jz .next
 
@@ -133,7 +133,7 @@ llog$dec:
 
 	; conver the remainder to ascii and store in the buffer.
 	add dl, '0'
-	mov [edi], dl
+	mov byte [edi], dl
 
 	; if quotient is 0, we are done
 	test eax, eax

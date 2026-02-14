@@ -50,12 +50,12 @@ loom$raise_el:
 	mov ds, ax
 
 	movzx ecx, al
-	mov eax, [loom$current_el]
+	mov eax, dword [loom$current_el]
 
 	cmp ecx, eax
 	jb loom$_invalid_el_change
 
-	mov [loom$current_el], ecx
+	mov dword [loom$current_el], ecx
 
 	pop ds
 	ret

@@ -27,10 +27,10 @@ shuttle$dispatch:
 	jz .reverse_done
 
 	; save the old next pointer.
-	mov ecx, [eax + Knot.next]
+	mov ecx, dword [eax + Knot.next]
 
 	; link the current into the previous.
-	mov [eax + Knot.next], edx
+	mov dword [eax + Knot.next], edx
 
 	; move previous to current and current to next.
 	mov edx, eax
@@ -44,9 +44,9 @@ shuttle$dispatch:
 	mov esi, eax
 
 	; load the knot data.
-	mov ebx, [esi + Knot.handler]
-	mov ecx, [esi + Knot.context]
-	mov edi, [esi + Knot.next]
+	mov ebx, dword [esi + Knot.handler]
+	mov ecx, dword [esi + Knot.context]
+	mov edi, dword [esi + Knot.next]
 
 	; call the handler.
 	mov eax, ecx
@@ -68,8 +68,8 @@ shuttle$tie:
 	mov edx, eax
 .retry:
 	mov eax, dword [shuttle$knot_head]
-	mov [edx + Knot.next], eax
-	lock cmpxchg [shuttle$knot_head], edx
+	mov dword [edx + Knot.next], eax
+	lock cmpxchg dword [shuttle$knot_head], edx
 	jnz .retry
 
 	ret

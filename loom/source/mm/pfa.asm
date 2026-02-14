@@ -37,7 +37,7 @@ macro mm$SET_FLAT sreg?*
 	; load the flat segment into es.
 	push eax
 
-	mov ax, [loom$flat_segment]
+	mov ax, word [loom$flat_segment]
 	mov sreg, ax
 
 	pop eax
@@ -68,7 +68,7 @@ end if
 
 	; load a pointer into the memmap entries and the count.
 	lfs esi, [loom$memory_map]
-	mov ecx, [fs:esi]
+	mov ecx, dword [fs:esi]
 	add esi, 4
 .loop_map:
 	test ecx, ecx
@@ -112,7 +112,7 @@ mm$alloc_pages:
 	jae .oom
 
 	; check if buckets[ecx] has a block.
-	mov esi, [mm_pfa_state.free_buckets + ecx * dword]
+	mov esi, dword [mm_pfa_state.free_buckets + ecx * dword]
 	test esi, esi
 	jnz .found
 
@@ -164,7 +164,7 @@ if build.debug
 	shl edi, cl
 	pop ecx
 
-	add [mm_pfa_state.used_mem], edi
+	add dword [mm_pfa_state.used_mem], edi
 end if
 
 	clc
@@ -193,7 +193,7 @@ if build.debug
 	add ecx, 12
 	shl edi, cl
 
-	sub [mm_pfa_state.used_mem], edi
+	sub dword [mm_pfa_state.used_mem], edi
 end if
 
 .coalesce_loop:
@@ -296,7 +296,7 @@ if build.debug
 	add ecx, 12
 	shl eax, cl
 
-	add [mm_pfa_state.total_mem], eax
+	add dword [mm_pfa_state.total_mem], eax
 	pop ecx
 end if
 	pop edx
@@ -324,7 +324,7 @@ mm$_list_push:
 	mm$SET_FLAT es
 
 	; build a new linked list entry at the start of the region.
-	mov ebx, [mm_pfa_state.free_buckets + edx * dword]
+	mov ebx, dword [mm_pfa_state.free_buckets + edx * dword]
 	mov dword [es:eax + MmFreeNode.prev], 0
 	mov dword [es:eax + MmFreeNode.next], ebx
 
@@ -332,10 +332,10 @@ mm$_list_push:
 	test ebx, ebx
 	jz .no_old_head
 
-	mov [es:ebx + MmFreeNode.prev], eax
+	mov dword [es:ebx + MmFreeNode.prev], eax
 .no_old_head:
 	; write back the new pointer to the head.
-	mov [mm_pfa_state.free_buckets + edx * dword], eax
+	mov dword [mm_pfa_state.free_buckets + edx * dword], eax
 
 	pop es ebx
 	ret
@@ -347,13 +347,13 @@ mm$_list_pop_head:
 	mm$SET_FLAT es
 
 	; get the old head.
-	mov esi, [mm_pfa_state.free_buckets + ecx * dword]
+	mov esi, dword [mm_pfa_state.free_buckets + ecx * dword]
 
 	; get the next node in the list.
-	mov eax, [es:esi + MmFreeNode.next]
+	mov eax, dword [es:esi + MmFreeNode.next]
 
 	; write back the new node.
-	mov [mm_pfa_state.free_buckets + ecx * dword], eax
+	mov dword [mm_pfa_state.free_buckets + ecx * dword], eax
 
 	; if new head exists, clear it's prev pointer.
 	test eax, eax
@@ -374,7 +374,7 @@ mm$_remove_specific_free_block:
 	mm$SET_FLAT es
 
 	; load the head of the list for this order.
-	mov edi, [mm_pfa_state.free_buckets + edx * dword]
+	mov edi, dword [mm_pfa_state.free_buckets + edx * dword]
 .scan:
 	test edi, edi
 	jz .not_found
@@ -383,30 +383,30 @@ mm$_remove_specific_free_block:
 	je .found
 
 	; next node.
-	mov edi, [es:edi + MmFreeNode.next]
+	mov edi, dword [es:edi + MmFreeNode.next]
 	jmp .scan
 
 .found:
 	; unlink the node.
-	mov esi, [es:edi + MmFreeNode.prev]
-	mov ebx, [es:edi + MmFreeNode.next]
+	mov esi, dword [es:edi + MmFreeNode.prev]
+	mov ebx, dword [es:edi + MmFreeNode.next]
 
 	; if there is no prev we are at head.
 	test esi, esi
 	jz .is_head
 
 	; point the prev's next pointer to pop'd next.
-	mov [es:esi + MmFreeNode.next], ebx
+	mov dword [es:esi + MmFreeNode.next], ebx
 	jmp .fix_next
 
 .is_head:
-	mov [mm_pfa_state.free_buckets + edx * dword], ebx
+	mov dword [mm_pfa_state.free_buckets + edx * dword], ebx
 .fix_next:
 	test ebx, ebx
 	jz .done
 
 	; point the next's prev pointer to pop'd prev.
-	mov [es:ebx + MmFreeNode.prev], esi
+	mov dword [es:ebx + MmFreeNode.prev], esi
 .done:
 	; clear the removed node's pointers for sanity.
 	mov dword [es:edi + MmFreeNode.prev], 0

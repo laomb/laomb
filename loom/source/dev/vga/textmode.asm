@@ -47,10 +47,10 @@ vga$init:
 	mov ax, rel 'DATA'
 	mov ds, ax
 
-	mov [vga_text_mode_state.cursor_x], 0
-	mov [vga_text_mode_state.cursor_y], 0
-	mov [vga_text_mode_state.color], VGA_TEXT_COLOR_WHITE
-	mov [vga_text_mode_state.flags], VGA_TEXT_FLAG_CURSOR_FOLLOW
+	mov dword [vga_text_mode_state.cursor_x], 0
+	mov dword [vga_text_mode_state.cursor_y], 0
+	mov dword [vga_text_mode_state.color], VGA_TEXT_COLOR_WHITE
+	mov dword [vga_text_mode_state.flags], VGA_TEXT_FLAG_CURSOR_FOLLOW
 
 	vga$ENABLE_CURSOR
 	call vga$_update_hw_cursor
@@ -75,15 +75,15 @@ vga$write_char:
 	je .cr
 
 	; calculate next address "0xB8000 + ((y * 80) + x) * 2"
-	mov ebx, [vga_text_mode_state.cursor_y]
+	mov ebx, dword [vga_text_mode_state.cursor_y]
 	imul ebx, VGA_TEXT_WIDTH
-	add ebx, [vga_text_mode_state.cursor_x]
+	add ebx, dword [vga_text_mode_state.cursor_x]
 	shl ebx, 1
 	add ebx, VGA_TEXT_BUFFER_ADDR
 
 	; draw character.
-	mov ah, [vga_text_mode_state.color]
-	mov [es:ebx], ax
+	mov ah, byte [vga_text_mode_state.color]
+	mov word [es:ebx], ax
 
 	; advance the cursor.
 	inc dword [vga_text_mode_state.cursor_x]
@@ -135,8 +135,8 @@ vga$clear:
 	rep stosd
 
 	; reset the cursor.
-	mov [vga_text_mode_state.cursor_x], 0
-	mov [vga_text_mode_state.cursor_y], 0
+	mov dword [vga_text_mode_state.cursor_x], 0
+	mov dword [vga_text_mode_state.cursor_y], 0
 
 	; sync the hardware cursor.
 	test byte [vga_text_mode_state.flags], VGA_TEXT_FLAG_CURSOR_FOLLOW
@@ -156,7 +156,7 @@ vga$set_color:
 	mov cx, rel 'DATA'
 	mov ds, cx
 
-	mov [vga_text_mode_state.color], al
+	mov byte [vga_text_mode_state.color], al
 
 	pop ds
 	ret
@@ -215,9 +215,9 @@ vga$_update_hw_cursor:
 	push ebx
 
 	; calculate the linear offset "y * 80 + x"
-	mov ebx, [vga_text_mode_state.cursor_y]
+	mov ebx, dword [vga_text_mode_state.cursor_y]
 	imul ebx, VGA_TEXT_WIDTH
-	add ebx, [vga_text_mode_state.cursor_x]
+	add ebx, dword [vga_text_mode_state.cursor_x]
 
 	; configure the VGA controller to recieve the low byte of the offset.
 	mov dx, VGA_CRT_INDEX_CONTROL_PORT

@@ -40,7 +40,7 @@ gdt$init:
 	panic 'Failed to allocate memory for the global descriptor table!'
 
 .mem_ok:
-	mov [gdt$table_address], eax
+	mov dword [gdt$table_address], eax
 
 	; construct the gdtr on the stack.
 	cpu$PUSH_TABLE_DESCRIPTOR (MM_PAGE_SIZE - 1), eax
@@ -135,7 +135,7 @@ gdt$alloc:
 	je .oom
 
 	; read 32 bits from the bitmap.
-	mov eax, [gdt$bitmap + ebx * 4]
+	mov eax, dword [gdt$bitmap + ebx * 4]
 	cmp eax, 0xffffffff
 	je .next_chunk
 
@@ -157,7 +157,7 @@ gdt$alloc:
 
 .write_entry:
 	; calculate a pointer to the descriptor slot.
-	mov edi, [gdt$table_address]
+	mov edi, dword [gdt$table_address]
 	lea edi, [edi + ebx * 8]
 
 	pop edx ecx eax
@@ -223,13 +223,13 @@ gdt$free:
 	mm$SET_FLAT es
 
 	; prepare a pointer to the gdt descriptor.
-	mov edi, [gdt$table_address]
+	mov edi, dword [gdt$table_address]
 	lea edi, [edi + eax * 8]
 
 	; zero the 8 byte gdt descriptor.
 	xor eax, eax
-	mov [es:edi], eax
-	mov [es:edi + 4], eax
+	mov dword [es:edi], eax
+	mov dword [es:edi + 4], eax
 
 	pop es ds edi
 .done:

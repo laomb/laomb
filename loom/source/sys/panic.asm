@@ -1,20 +1,20 @@
 
 struct PanicContext
-	gs dd ?
-	fs dd ?
-	es dd ?
-	ds dd ?
+	s_gs dd ?
+	s_fs dd ?
+	s_es dd ?
+	s_ds dd ?
 
-	edi dd ?
-	esi dd ?
-	ebp dd ?
-	esp dd ?
-	ebx dd ?
-	edx dd ?
-	ecx dd ?
-	eax dd ?
+	s_edi dd ?
+	s_esi dd ?
+	s_ebp dd ?
+	s_esp dd ?
+	s_ebx dd ?
+	s_edx dd ?
+	s_ecx dd ?
+	s_eax dd ?
 
-	eip dd ?
+	s_eip dd ?
 end struct
 
 segment 'TEXT', ST_CODE_XO
@@ -50,21 +50,21 @@ panic$trigger:
 	call vga$clear
 
 	print "================ SYSTEM HALT ================\n"
-	print "{s}\n", [ebp + PanicContext.eax]
+	print "{s}\n", [ebp + PanicContext.s_eax]
 	print "=============================================\n"
 
 	print "EAX: 0x{x}  EBX: 0x{x}  ECX: 0x{x}  EDX: 0x{x}\n", \
-		  [ebp + PanicContext.eax], [ebp + PanicContext.ebx], \
-		  [ebp + PanicContext.ecx], [ebp + PanicContext.edx]
+		  [ebp + PanicContext.s_eax], [ebp + PanicContext.s_ebx], \
+		  [ebp + PanicContext.s_ecx], [ebp + PanicContext.s_edx]
 
 	print "ESI: 0x{x}  EDI: 0x{x}  EBP: 0x{x}  ESP: 0x{x}\n", \
-		  [ebp + PanicContext.esi], [ebp + PanicContext.edi], \
-		  [ebp + PanicContext.ebp], [ebp + PanicContext.esp]
+		  [ebp + PanicContext.s_esi], [ebp + PanicContext.s_edi], \
+		  [ebp + PanicContext.s_ebp], [ebp + PanicContext.s_esp]
 
 	print "CS:  0x{x}  DS:  0x{x}  ES:  0x{x}\n", \
-		  cs, [ebp + PanicContext.ds], [ebp + PanicContext.es]
+		  cs, [ebp + PanicContext.s_ds], [ebp + PanicContext.s_es]
 	print "FS:  0x{x}  GS:  0x{x}  SS:  0x{x}\n", \
-		  [ebp + PanicContext.fs], [ebp + PanicContext.gs], ss
+		  [ebp + PanicContext.s_fs], [ebp + PanicContext.s_gs], ss
 
 	mov eax, cr0
 	print "CR0: 0x{x}  ", eax
@@ -75,7 +75,7 @@ panic$trigger:
 	mov eax, cr3
 	print "CR3: 0x{x}\n", eax
 
-	print "EIP: 0x{x}  EFLAGS: ", [ebp + PanicContext.eip]
+	print "EIP: 0x{x}  EFLAGS: ", [ebp + PanicContext.s_eip]
 
 	pushfd
 	pop eax
@@ -83,7 +83,7 @@ panic$trigger:
 
 	print "\nStack Dump:\n"
 
-	mov esi, [ebp + PanicContext.esp]
+	mov esi, [ebp + PanicContext.s_esp]
 	mov ecx, 5
 
 .stack_dump:
