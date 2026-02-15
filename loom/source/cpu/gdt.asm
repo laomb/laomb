@@ -114,7 +114,7 @@ gdt$init:
 
 ; type = flags << 8 | access
 ;
-; function gdt$alloc(base: Cardinal, limit: Cardinal, type: Cardinal): Cardinal;
+; function gdt$alloc(base: Cardinal, limit: Cardinal, type: Cardinal): Cardinal, CF;
 gdt$alloc:
 	push ebx edi ds es
 

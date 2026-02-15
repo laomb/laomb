@@ -3,7 +3,7 @@ MAX_SINKS = 4
 
 segment 'TEXT', ST_CODE_XO
 
-; procedure llog$register_sink(handler: *fn(sz: PAnsiChar));
+; function llog$register_sink(handler: *fn(sz: PAnsiChar)): CF;
 llog$register_sink:
 	push edi ds es
 

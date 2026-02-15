@@ -94,7 +94,7 @@ end if
 	pop fs es ds edi esi ebx
 	ret
 
-; function mm$alloc_pages(order: Cardinal): Pointer;
+; function mm$alloc_pages(order: Cardinal): Pointer, CF;
 mm$alloc_pages:
 	push ebx esi edi ds
 
@@ -367,7 +367,7 @@ mm$_list_pop_head:
 	pop es esi
 	ret
 
-; procedure mm$_list_pop_head(address_of_block: Cardinal, order: Cardinal);
+; function mm$_list_pop_head(address_of_block: Cardinal, order: Cardinal): CF;
 mm$_remove_specific_free_block:
 	push ebx esi edi es
 
