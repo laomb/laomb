@@ -235,6 +235,29 @@ gdt$free:
 .done:
 	ret
 
+; function gdt$get_base(selector: Byte): Cardinal;
+gdt$get_base:
+	push ebx es
+
+	; get the flat linear address of the page table.
+	mm$SET_FLAT es
+	mov ebx, [gdt$table_address]
+
+	; calculate the descriptor offset.
+	movzx eax, ax
+	and eax, 0xf8
+	add ebx, eax
+
+	; decode the base address of the descriptor.
+	xor eax, eax
+	mov ah, byte [es:ebx + 7]
+	mov al, byte [es:ebx + 4]
+	shl eax, 16
+	mov ax, word [es:ebx + 2]
+
+	pop es ebx
+	ret
+
 segment 'DATA', ST_DATA_RW
 
 gdt$table_address:

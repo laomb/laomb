@@ -5,6 +5,10 @@ include 'llog.asm'
 
 segment 'TEXT', ST_CODE_XO
 
+; code nullptr guard.
+loom$_panic0:
+	jmp panic$trigger
+
 entry _start
 _start:
 	mov ax, rel 'IPT'
@@ -30,10 +34,9 @@ _start:
 
 	call mm$pfa_init
 	call gdt$init
+	call idt$init
 
-	; test a crash.
-	mov eax, EL_3
-	call loom$lower_el
+	ud2
 
 	jmp $
 
@@ -51,6 +54,7 @@ include 'source/dev/vga/crt.asm'
 include 'source/mm/pfa.asm'
 include 'source/cpu/table_descriptor.asm'
 include 'source/cpu/gdt.asm'
+include 'source/cpu/idt.asm'
 include 'source/sys/el.asm'
 include 'source/sys/shuttle.asm'
 include 'source/sys/llog.asm'
