@@ -19,6 +19,10 @@ loom$lower_el:
 	cmp ebx, dword [loom$current_el]
 	ja loom$_invalid_el_change
 
+	; check if we are in EL_0.
+	cmp dword [loom$current_el], EL_0
+	je .set_only
+
 	; check if we are lowering to L1/L2.
 	cmp ebx, EL_0
 	jne .set_only
@@ -30,9 +34,7 @@ loom$lower_el:
 
 	; raise EL to L1 before allowing ISRs to run.
 	mov dword [loom$current_el], EL_1
-	sti
 	call shuttle$dispatch
-	cli
 
 	jmp .check_shuttle
 
@@ -56,8 +58,8 @@ loom$raise_el:
 	cmp ecx, eax
 	jb loom$_invalid_el_change
 
-	cmp ecx, EL_3
-	jne .set_only
+	cmp ecx, EL_2
+	jb .set_only
 
 	cli
 .set_only:
