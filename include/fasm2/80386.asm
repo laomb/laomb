@@ -2194,7 +2194,7 @@ iterate <instr,opcode>, daa,27h, das,2Fh, aaa,37h, aas,3Fh, nop,90h, int3,0CCh, 
 			hlt,0F4h, cmc,0F5h, clc,0F8h, stc,0F9h, cli,0FAh, sti,0FBh, cld,0FCh, std,0FDh, \
 			pusha,60h, popa,61h, pushf,9Ch, popf,9Dh, sahf,9Eh, lahf,9Fh, leave,0C9h, \
 			insb,6Ch, outsb,6Eh, movsb,0A4h, cmpsb,0A6h, stosb,0AAh, lodsb,0ACh, scasb,0AEh, xlatb,0D7h, \
-			clts,<0Fh,06h>, loadall,<0Fh,07h>
+			clts,<0Fh,06h>, loadall,<0Fh,07h>, ud2,<0Fh,0Bh>
 
 	match	byte1=,byte2, opcode
 		calminstruction instr?
