@@ -121,24 +121,24 @@ calc_region_slots:
 
 	; align base up (should not be misaligned).
 	test ecx, 0xfff
-    jz .base_ok
+	jz .base_ok
 
-    and ecx, 0xfffff000
-    add ecx, 0x1000
+	and ecx, 0xfffff000
+	add ecx, 0x1000
 .base_ok:
 	; align end down.
 	and eax, 0xfffff000
 
 	; check if the range is still valid.
 	cmp ecx, eax
-    jae .zero_slots
+	jae .zero_slots
 
 	; calculate usable size.
 	sub eax, ecx
 
 	; check if it can fit the supervisor.
 	cmp eax, ebx
-    jb .zero_slots
+	jb .zero_slots
 
 	; calculate number of usable slots.
 	sub eax, ebx

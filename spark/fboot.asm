@@ -19,7 +19,7 @@ root_directory_start = fat_area_sectors + reserved_sectors
 data_area_start = root_directory_start + root_dir_sectors
 
 ; address of the last sector that we can load before overwriting stage 1 code.
-sanity_sector =  0x7a00
+sanity_sector = 0x7a00
 
 jmp short _start
 nop

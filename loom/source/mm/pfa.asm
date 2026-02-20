@@ -50,8 +50,8 @@ mm$pfa_init:
 	push ebx esi edi ds es fs
 
 	mov ax, rel 'DATA'
-    mov ds, ax
-    mov es, ax
+	mov ds, ax
+	mov es, ax
 
 if build.debug
 	mov dword [mm_pfa_state.total_mem], 0
@@ -99,7 +99,7 @@ mm$alloc_pages:
 	push ebx esi edi ds
 
 	mov bx, rel 'DATA'
-    mov ds, bx
+	mov ds, bx
 
 	cmp eax, MM_MAX_ORDER
 	ja .oom
@@ -183,7 +183,7 @@ mm$free_pages:
 	mm$SET_FLAT es
 
 	mov bx, rel 'DATA'
-    mov ds, bx
+	mov ds, bx
 
 if build.debug
 	; update the status to free the memory.
