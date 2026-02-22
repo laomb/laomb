@@ -35,6 +35,7 @@ _start:
 	call mm$pfa_init
 	call gdt$init
 	call idt$init
+	call vpic$init
 
 	ud2
 
@@ -51,6 +52,8 @@ loom$memory_map:
 
 include 'source/dev/vga/textmode.asm'
 include 'source/dev/vga/crt.asm'
+include 'source/dev/pic/pic.asm'
+include 'source/dev/pic/vpic.asm'
 include 'source/mm/pfa.asm'
 include 'source/cpu/table_descriptor.asm'
 include 'source/cpu/gdt.asm'

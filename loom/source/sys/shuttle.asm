@@ -2,7 +2,7 @@
 struct Knot
 	handler dd ?
 	context dd ?
-	
+
 	next dd ?
 end struct
 
