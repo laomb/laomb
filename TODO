@@ -1,6 +1,9 @@
 - [ ] Fine grained segments for accessing MMIO instead of a flat segment.
 - [ ] If the PFA is slow, add external bitmap-like metadata for page order and availability status.
 - [ ] Data segment nullptr guard using paging.
+- [ ] Add zones to the pfa.
+- [ ] ReclaimD to free free sllub list on memory pressure.
+- [ ] Add constructor & destructors to the cache as well as assembly-time custom slab size registration.
 
 ## If ever needed.
 - [ ] Replace fixed max gdt (512 entries) with a dynamically allocated gdt and gdt bitmap.
